@@ -47,5 +47,5 @@ app.post('/api/orders/:id/payment-proof', auth, roles('admin','worker'), upload.
 app.get('/api/files/:id', auth, roles('admin','worker'), async (req, res) => { const [rows] = await pool.query('SELECT * FROM order_files WHERE id=?', [req.params.id]); if (!rows[0]) return res.sendStatus(404); res.download(path.join(uploadDir, rows[0].stored_name), rows[0].original_name) })
 
 app.use(express.static('dist'))
-app.get('*', (_req, res) => res.sendFile(path.resolve('dist/index.html')))
+app.use((_req, res) => res.sendFile(path.resolve('dist/index.html')))
 app.listen(port, () => console.log(`Maxrez API listening on ${port}`))
