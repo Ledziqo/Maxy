@@ -46,6 +46,8 @@ app.patch('/api/orders/:id/assign', auth, roles('admin'), async (req, res) => { 
 app.post('/api/orders/:id/payment-proof', auth, roles('admin','worker'), upload.single('proof'), async (req, res) => { if (!req.file) return res.status(400).json({ error: 'Payment proof is required' }); await pool.query('INSERT INTO order_files (order_id, kind, original_name, stored_name, mime_type, size_bytes) VALUES (?, "payment_proof", ?, ?, ?, ?)', [req.params.id, req.file.originalname, req.file.filename, req.file.mimetype, req.file.size]); await pool.query('UPDATE orders SET status="payment_verification" WHERE id=?', [req.params.id]); await event(req.params.id, req.user.id, 'payment_verification', 'Payment proof uploaded'); res.json({ ok: true }) })
 app.get('/api/files/:id', auth, roles('admin','worker'), async (req, res) => { const [rows] = await pool.query('SELECT * FROM order_files WHERE id=?', [req.params.id]); if (!rows[0]) return res.sendStatus(404); res.download(path.join(uploadDir, rows[0].stored_name), rows[0].original_name) })
 
+app.use('/images', express.static(path.resolve('images')))
+app.use('/assets', express.static(path.resolve('dist/assets')))
 app.use(express.static('dist'))
 app.use((_req, res) => res.sendFile(path.resolve('dist/index.html')))
 app.listen(port, () => console.log(`Maxrez API listening on ${port}`))
