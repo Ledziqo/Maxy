@@ -1,12 +1,13 @@
 /* Larger cards with image frames that match the generated service photographs. */
-.service-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}
+.service-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
 .service-card{padding:14px}
 .service-image{height:auto;aspect-ratio:3/2;background:#eee8e2;padding:8px}
 .service-image img{display:block;width:100%;height:100%;max-width:100%;max-height:100%;object-fit:contain!important;object-position:center!important}
 
 /* Fade the complete hero artwork into a continuous edge-to-edge gradient. */
-.hero-art{background:linear-gradient(90deg,#faeee4 0%,#f9e8dc 27%,#f37b68 70%,#b93442 100%)}
-.hero-art img{object-fit:contain!important;object-position:center;transform:none;-webkit-mask-image:linear-gradient(90deg,transparent 0%,#000 7%,#000 93%,transparent 100%);mask-image:linear-gradient(90deg,transparent 0%,#000 7%,#000 93%,transparent 100%)}
+.hero-art{background:linear-gradient(90deg,#faeee5 0%,#f9e9df 26%,#f7ad9a 50%,#ef6156 73%,#b93745 100%)}
+.hero-art::after{content:"";position:absolute;inset:0;z-index:2;pointer-events:none;background:linear-gradient(90deg,#faeee5 0%,rgba(250,238,229,.72) 13%,transparent 30%,transparent 72%,rgba(185,55,69,.25) 86%,#b93745 100%)}
+.hero-art img{position:relative;z-index:1;object-fit:contain!important;object-position:center;transform:none;-webkit-mask-image:linear-gradient(90deg,transparent 0%,#000 18%,#000 82%,transparent 100%);mask-image:linear-gradient(90deg,transparent 0%,#000 18%,#000 82%,transparent 100%)}
 
-@media(max-width:900px){.service-grid{grid-template-columns:1fr}.service-image{aspect-ratio:3/2}}
-@media(max-width:560px){.service-image{aspect-ratio:3/2;padding:6px}.hero-art img{-webkit-mask-image:linear-gradient(90deg,transparent 0%,#000 3%,#000 97%,transparent 100%);mask-image:linear-gradient(90deg,transparent 0%,#000 3%,#000 97%,transparent 100%)}}
+@media(max-width:900px){.service-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.service-image{aspect-ratio:3/2}}
+@media(max-width:560px){.service-grid{grid-template-columns:1fr}.service-image{aspect-ratio:3/2;padding:6px}.hero-art img{-webkit-mask-image:linear-gradient(90deg,transparent 0%,#000 12%,#000 88%,transparent 100%);mask-image:linear-gradient(90deg,transparent 0%,#000 12%,#000 88%,transparent 100%)}}
