@@ -4,12 +4,12 @@ import { ArrowRight, Check, Clock3, FileUp, Menu, Package, ShieldCheck, Sparkles
 import './styles.css'
 
 const services = [
-  { id: 'graphic-design', title: 'Graphic Design', detail: 'Creative branding, logo design, and layout services tailored to your business identity.', price: 'Request a quote', image: '/images/graphic-design.jpg' },
-  { id: 'digital-printing', title: 'Digital Printing', detail: 'High-quality, fast-turnaround digital printing for brochures, flyers, and business cards.', price: 'Request a quote', image: '/images/digital-printing.jpg' },
-  { id: 'ctp', title: 'Computer to Plate (CTP)', detail: 'Advanced CTP technology ensuring sharp, accurate plates for superior offset printing results.', price: 'Request a quote', image: '/images/ctp.jpg' },
-  { id: 'film-output', title: 'Film Output', detail: 'Precision film output services for screen printing and other specialized reproduction needs.', price: 'Request a quote', image: '/images/film-output.jpg' },
-  { id: 'offset-printing', title: 'Offset Printing', detail: 'Cost-effective high-volume printing delivering consistent, professional quality for publications.', price: 'Request a quote', image: '/images/offset-print.jpg' },
-  { id: 'packaging-finishing', title: 'Packaging & Finishing', detail: 'Premium die-cutting, custom boxes, foil stamping, and binding solutions for impactful branding.', price: 'Request a quote', image: '/images/packaging-finishing.png' },
+  { id: 'graphic-design', title: 'Graphic Design', detail: 'Creative branding, logo design, and layout services tailored to your business identity.', price: 'Request a quote', image: '/images/photos%20to%20use/graphic-design.png' },
+  { id: 'digital-printing', title: 'Digital Printing', detail: 'High-quality, fast-turnaround digital printing for brochures, flyers, and business cards.', price: 'Request a quote', image: '/images/photos%20to%20use/digital-printing.png' },
+  { id: 'ctp', title: 'Computer to Plate (CTP)', detail: 'Advanced CTP technology ensuring sharp, accurate plates for superior offset printing results.', price: 'Request a quote', image: '/images/photos%20to%20use/ctp.png' },
+  { id: 'film-output', title: 'Film Output', detail: 'Precision film output services for screen printing and other specialized reproduction needs.', price: 'Request a quote', image: '/images/photos%20to%20use/film-output.png' },
+  { id: 'offset-printing', title: 'Offset Printing', detail: 'Cost-effective high-volume printing delivering consistent, professional quality for publications.', price: 'Request a quote', image: '/images/photos%20to%20use/offset-printing.png' },
+  { id: 'packaging-finishing', title: 'Packaging & Finishing', detail: 'Premium die-cutting, custom boxes, foil stamping, and binding solutions for impactful branding.', price: 'Request a quote', image: '/images/photos%20to%20use/packaging-finishing.png' },
 ]
 
 const API = import.meta.env.VITE_API_URL || '/api'
