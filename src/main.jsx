@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import { ArrowRight, Check, Clock3, FileUp, Menu, Package, ShieldCheck, Sparkles, Truck, Upload, X } from 'lucide-react'
 import './styles.css'
+import './overrides.css'
 
 const services = [
   { id: 'graphic-design', title: 'Graphic Design', detail: 'Creative branding, logo design, and layout services tailored to your business identity.', price: 'Request a quote', image: '/images/photos%20to%20use/graphic-design.png' },
