@@ -4,10 +4,12 @@ import { ArrowRight, Check, Clock3, FileUp, Menu, Package, ShieldCheck, Sparkles
 import './styles.css'
 
 const services = [
-  { id: 'cards', title: 'Business cards', detail: 'Premium stock, sharp finishing', price: 'from 450 ETB', image: '/images/work-1.png' },
-  { id: 'brochures', title: 'Brochures & flyers', detail: 'Make every message memorable', price: 'from 1,200 ETB', image: '/images/work-4.png' },
-  { id: 'packaging', title: 'Packaging & labels', detail: 'Built for brands people remember', price: 'Request a quote', image: '/images/packaging-finishing.png' },
-  { id: 'large', title: 'Large format', detail: 'Banners, signs and displays', price: 'from 900 ETB', image: '/images/large-format.png' },
+  { id: 'graphic-design', title: 'Graphic Design', detail: 'Creative branding, logo design, and layout services', price: 'Request a quote', image: '/images/graphic-design.jpg' },
+  { id: 'digital-printing', title: 'Digital Printing', detail: 'Fast-turnaround printing for brochures, flyers, and cards', price: 'From 450 ETB', image: '/images/digital-printing.jpg' },
+  { id: 'ctp', title: 'Computer to Plate (CTP)', detail: 'Sharp, accurate plates for superior offset results', price: 'Request a quote', image: '/images/ctp.jpg' },
+  { id: 'film-output', title: 'Film Output', detail: 'Precision film output for screen printing', price: 'Request a quote', image: '/images/film-output.jpg' },
+  { id: 'offset-printing', title: 'Offset Printing', detail: 'Consistent, professional quality for high-volume work', price: 'From 1,200 ETB', image: '/images/offset-print.jpg' },
+  { id: 'packaging-finishing', title: 'Packaging & Finishing', detail: 'Die-cutting, custom boxes, foil stamping, and binding', price: 'Request a quote', image: '/images/packaging-finishing.png' },
 ]
 
 const API = import.meta.env.VITE_API_URL || '/api'
