@@ -1,1 +1,2 @@
-.service-image img{object-fit:cover;object-position:center}
+.service-image img{object-fit:contain;object-position:center;display:block}
+@media(max-width:900px){.service-image img{object-fit:contain}}
