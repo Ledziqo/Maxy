@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth scroll-pt-24">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Maxrez Graphics & Printing PLC</title>
+    <meta name="description" content="Leading printing and graphics company in Addis Ababa, Ethiopia." />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+            },
+            colors: {
+              brand: {
+                red: '#C1272D',
+                dark: '#0f0a0a',
+                card: '#1a1212',
+                light: '#fafafa',
+                gray: '#e7e5e4',
+                text: '#f5f5f4',
+                muted: '#a8a29e',
+                border: '#29201f',
+              }
+            },
+            keyframes: {
+              'fade-in-up': {
+                '0%': { opacity: '0', transform: 'translateY(30px)' },
+                '100%': { opacity: '1', transform: 'translateY(0)' },
+              },
+              'shimmer': {
+                '0%': { backgroundPosition: '-200% 0' },
+                '100%': { backgroundPosition: '200% 0' },
+              },
+              'float': {
+                '0%, 100%': { transform: 'translateY(0)' },
+                '50%': { transform: 'translateY(-10px)' },
+              },
+              'marquee-left': {
+                '0%': { transform: 'translate3d(0, 0, 0)' },
+                '100%': { transform: 'translate3d(calc(-50% - 12px), 0, 0)' },
+              },
+            },
+            animation: {
+              'fade-in-up': 'fade-in-up 0.6s ease-out forwards',
+              'fade-in-up-delay': 'fade-in-up 0.6s ease-out 0.2s forwards',
+              'fade-in-up-delay-2': 'fade-in-up 0.6s ease-out 0.4s forwards',
+              'shimmer': 'shimmer 3s linear infinite',
+              'float': 'float 6s ease-in-out infinite',
+              'marquee-left': 'marquee-left 40s linear infinite',
+            },
+          }
+        }
+      }
+    </script>
+
+<script type="importmap">
+{
+  "imports": {
+    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
+    "lucide-react": "https://esm.sh/lucide-react@^0.564.0",
+    "react": "https://esm.sh/react@^19.2.4",
+    "vite": "https://esm.sh/vite@^7.3.1",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.4",
+    "react/": "https://esm.sh/react@^19.2.4/"
+  }
+}
+</script>
+  <script type="module" crossorigin src="/assets/index-Ba8cmvz3.js"></script>
+</head>
+  <body class="bg-brand-dark text-brand-text antialiased">
+    <div id="root"></div>
+  </body>
+</html>

@@ -1,0 +1,9 @@
+{
+  "name": "maxrez-print-commerce",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": { "dev": "vite", "build": "vite build", "preview": "vite preview", "server": "node server/index.js", "seed-admin": "node server/seed-admin.js" },
+  "dependencies": { "@vitejs/plugin-react": "latest", "vite": "latest", "react": "latest", "react-dom": "latest", "lucide-react": "latest", "express": "latest", "mysql2": "latest", "dotenv": "latest", "cors": "latest", "helmet": "latest", "bcryptjs": "latest", "jsonwebtoken": "latest", "multer": "latest", "express-rate-limit": "latest" },
+  "devDependencies": {}
+}
