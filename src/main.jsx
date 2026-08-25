@@ -4,10 +4,12 @@ import { ArrowRight, Check, Clock3, FileUp, Menu, Package, ShieldCheck, Sparkles
 import './styles.css'
 
 const services = [
-  { id: 'cards', title: 'Business cards', detail: 'Premium stock, sharp finishing', price: 'From 450 ETB', image: '/images/work-1.png' },
-  { id: 'brochures', title: 'Brochures & flyers', detail: 'Make every message memorable', price: 'From 1,200 ETB', image: '/images/work-4.png' },
-  { id: 'packaging', title: 'Packaging & labels', detail: 'Built for brands people remember', price: 'Request a quote', image: '/images/work-13.jpg' },
-  { id: 'large', title: 'Large format', detail: 'Banners, signs and displays', price: 'From 900 ETB', image: '/images/work-12.png' },
+  { id: 'graphic-design', title: 'Graphic Design', detail: 'Creative branding, logo design, and layout services tailored to your business identity.', price: 'Request a quote', image: '/images/graphic-design.jpg' },
+  { id: 'digital-printing', title: 'Digital Printing', detail: 'High-quality, fast-turnaround digital printing for brochures, flyers, and business cards.', price: 'Request a quote', image: '/images/digital-printing.jpg' },
+  { id: 'ctp', title: 'Computer to Plate (CTP)', detail: 'Advanced CTP technology ensuring sharp, accurate plates for superior offset printing results.', price: 'Request a quote', image: '/images/ctp.jpg' },
+  { id: 'film-output', title: 'Film Output', detail: 'Precision film output services for screen printing and other specialized reproduction needs.', price: 'Request a quote', image: '/images/film-output.jpg' },
+  { id: 'offset-printing', title: 'Offset Printing', detail: 'Cost-effective high-volume printing delivering consistent, professional quality for publications.', price: 'Request a quote', image: '/images/offset-print.jpg' },
+  { id: 'packaging-finishing', title: 'Packaging & Finishing', detail: 'Premium die-cutting, custom boxes, foil stamping, and binding solutions for impactful branding.', price: 'Request a quote', image: '/images/packaging-finishing.png' },
 ]
 
 const API = import.meta.env.VITE_API_URL || '/api'
