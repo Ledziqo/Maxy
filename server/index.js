@@ -109,8 +109,10 @@ function readRasterDimensions(buffer,mime) {
 }
 
 async function deliveryEstimate({ address, zone, urgent }) {
-  const fallbackMinutes = ({ Bole:30, Kazanchis:35, Piassa:45, Saris:30, Mexico:35 }[zone] || 50) + (urgent ? 10 : 20)
-  const fallbackFee = ({ Bole:180, Kazanchis:190, Piassa:230, Saris:190, Mexico:200 }[zone] || 250) + (urgent ? 80 : 0)
+  const defaults = ({ Bole:[30,180], Kazanchis:[35,190], Piassa:[45,230], Saris:[30,190], Mexico:[35,200] }[zone] || [50,250])
+  let fallbackMinutes=defaults[0],fallbackFee=defaults[1]
+  try { const [rows]=await pool.query('SELECT fee,eta_minutes FROM delivery_zones WHERE name=? AND active=1 LIMIT 1',[zone]); if(rows[0]){fallbackFee=Number(rows[0].fee);fallbackMinutes=Number(rows[0].eta_minutes)} } catch {}
+  fallbackMinutes += urgent ? 10 : 20; fallbackFee += urgent ? 80 : 0
   if (!process.env.GOOGLE_MAPS_API_KEY || !address) return { source:'zone', durationSeconds:fallbackMinutes*60, distanceMeters:null, fee:fallbackFee, trafficAware:false }
   try {
     const response = await fetch('https://routes.googleapis.com/directions/v2:computeRoutes', { method:'POST', headers:{ 'Content-Type':'application/json', 'X-Goog-Api-Key':process.env.GOOGLE_MAPS_API_KEY, 'X-Goog-FieldMask':'routes.duration,routes.distanceMeters' }, body:JSON.stringify({ origin:{ address:facilityAddress }, destination:{ address }, travelMode:'DRIVE', routingPreference:'TRAFFIC_AWARE_OPTIMAL', departureTime:new Date(Date.now()+60000).toISOString() }) })
