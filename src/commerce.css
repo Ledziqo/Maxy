@@ -16,4 +16,9 @@
 @media(max-width:700px){.tracking-head{align-items:start;flex-direction:column}.tracking-status{width:100%}.tracking-layout{padding-top:28px}.tracking-card{position:static}.tracking-page{padding-left:20px!important;padding-right:20px!important}}
 
 .workspace-brand span{color:#c7232c;text-shadow:0 1px 0 #fff;font-weight:900}.workspace-brand small{color:#746a66}.hero-art:after{background:linear-gradient(90deg,transparent 54%,rgba(248,246,242,.08) 73%,rgba(248,246,242,.34) 100%)}
+
+/* Use the real brand lockup in operations instead of low-contrast text. */
+.workspace-top .workspace-brand{display:flex!important;align-items:center;width:220px;min-height:58px;background:#fff url('/images/maxrez-logo.png') left center/190px auto no-repeat;border-radius:8px}
+.workspace-top .workspace-brand span{display:none!important}
+@media(max-width:600px){.workspace-top .workspace-brand{width:155px;min-height:48px;background-size:145px auto}}
 .delivery-map{margin-top:18px;padding:16px;border-radius:14px;background:#f7f3ef}.map-preview{position:relative;overflow:hidden;margin:8px 0 14px;border-radius:12px;border:1px solid #ddd2ca}.map-preview iframe{display:block;width:100%;height:250px;border:0;filter:saturate(.82)}.map-locate{position:absolute;bottom:12px;left:12px;display:flex;align-items:center;gap:7px;padding:10px 13px;border:1px solid #ddd3cc;border-radius:999px;background:#fff;color:#c7232c;font-size:12px;font-weight:700;box-shadow:0 5px 15px #0002}.delivery-map .commerce-field{margin-bottom:8px}
