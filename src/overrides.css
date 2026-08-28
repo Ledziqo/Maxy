@@ -86,3 +86,22 @@
   .table-row{min-width:680px}
   .empty-state{padding:60px 16px}
 }
+
+/* Final small-screen pass: keep the hero artwork centered and proportional. */
+@media(max-width:700px){
+  .hero{min-height:0;padding:34px 18px 28px;display:flex;flex-direction:column;gap:0}
+  .hero-art{order:-1;width:calc(100% + 36px);height:285px;margin:0 -18px 18px;transform:none!important;overflow:hidden;display:block;background:linear-gradient(110deg,#faeee5 0%,#f8d7c9 48%,#d97872 100%)}
+  .hero-art img{left:50%;right:auto;top:auto;bottom:-4px;width:145%;height:auto;max-width:none;transform:translateX(-50%)!important;object-fit:contain!important;mask-image:linear-gradient(180deg,transparent 0%,#000 18%,#000 100%);-webkit-mask-image:linear-gradient(180deg,transparent 0%,#000 18%,#000 100%)}
+  .hero-art:after{background:linear-gradient(90deg,rgba(250,238,229,.12),transparent 28%,transparent 78%,rgba(185,55,69,.08))!important}
+  .hero-copy{width:100%}
+  .hero-ctas{max-width:none;width:100%}
+  .hero-ctas .primary,.hero-ctas .text-link{width:100%}
+  .trust-row{width:100%}
+  .config-grid,.facility,.tracking-layout{grid-template-columns:1fr!important}
+  .config-section,.portfolio,.industry-preview,.facility{padding-left:18px;padding-right:18px}
+  .field-row,.choice-row,.fulfillment{grid-template-columns:1fr!important}
+  .quote-card{position:static}
+  .industry-grid,.industry-page-grid,.portfolio-grid{grid-template-columns:1fr!important}
+  .tracking-head h1{font-size:38px;overflow-wrap:anywhere}
+  .settings-panel{margin:18px;padding:20px 16px}
+}
