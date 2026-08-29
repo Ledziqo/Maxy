@@ -98,6 +98,10 @@
   .hero,.hero-art{background:#faeee5!important}
 }
 
+/* Solid desktop hero background; the product image should not be washed by gradients. */
+.hero,.hero-art{background:#faeee5!important}
+.hero-art:after{display:none!important;background:none!important}
+
 /* Mobile hero: readable copy first, proportional artwork beneath it. */
 @media(max-width:700px){
   .hero{display:flex;flex-direction:column;padding:28px 18px 24px;min-height:0}
