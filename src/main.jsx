@@ -6,6 +6,7 @@ import './overrides.css'
 import './commerce.css'
 import './settings.css'
 import SettingsPanel from './SettingsPanel.jsx'
+import AdminAccounts from './AdminAccounts.jsx'
 
 const API = import.meta.env.VITE_API_URL || '/api'
 const facility = { address: 'Gabon Street Woreda 02, House no. 359', city: 'Addis Ababa, 7202, Ethiopia', phone: '+251 91 120 7630', email: 'info@maxrezgraphics.com' }
@@ -51,6 +52,7 @@ function App(){
   if(path==='/account')page=<CustomerDashboard customer={customer} go={go} onLogin={()=>setAccountOpen(true)}/>
   if(path==='/staff')page=<StaffGate go={go}/>
   if(path==='/settings')page=<SettingsPanel api={api}/>
+  if(path==='/admin-accounts')page=<AdminAccounts api={api}/>
   if(path.startsWith('/track/'))page=<TrackingPage token={path.split('/').pop()} go={go}/>
   if(path.startsWith('/policies/'))page=<PolicyPage type={path.split('/').pop()} go={go}/>
   return <div className="app commerce-app"><Header go={go} menu={menu} setMenu={setMenu} customer={customer} onAccount={()=>customer?go('/account'):setAccountOpen(true)}/>{page}<Footer go={go}/>{accountOpen&&<AccountModal onClose={()=>setAccountOpen(false)} onSuccess={session=>{localStorage.setItem('maxrez-customer',JSON.stringify(session));setCustomer(session);setAccountOpen(false);go('/account')}}/>}</div>
