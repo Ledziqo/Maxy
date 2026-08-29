@@ -107,9 +107,9 @@
   .hero{position:relative;background:linear-gradient(90deg,#f9eadc 0%,#fdf3da 17.2%,#f4b39c 53%,#cf4d3e 88.9%,#cf4d3e 100%)!important}
   .hero:before,.hero:after{content:"";position:absolute;top:0;bottom:0;z-index:0;pointer-events:none}
   .hero:before{left:0;width:17.3%;background:linear-gradient(180deg,#fdeed6 0%,#fdf3db 38%,#fdf3db 100%)}
-  .hero:after{right:0;width:11.2%;background:linear-gradient(180deg,#d94539 0%,#d24a3b 50%,#c48b6e 100%)}
-  .hero-copy,.hero-art{position:relative;z-index:1}
-  .hero-art{background:transparent!important}
+  .hero:after{right:0;width:calc(11.2% + 8px);background:linear-gradient(180deg,#d9473b 0%,#d9473b 38%,#d65345 54%,#d8755c 69%,#dd9d7c 84%,#e4bd95 100%)}
+  .hero-copy{position:relative;z-index:2}
+  .hero-art{position:absolute;inset:0;z-index:1;background:transparent!important}
   .hero-art img{visibility:visible!important}
 }
 
