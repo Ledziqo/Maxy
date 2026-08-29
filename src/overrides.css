@@ -102,6 +102,7 @@
 .hero,.hero-art{background:#faeee5!important}
 .hero-art:after{display:none!important;background:none!important}
 .hero-art img{content:url('/images/hero-print-showcase-v2.png')!important;filter:drop-shadow(0 24px 24px rgba(70,35,30,.14))}
+.hero-art img{-webkit-mask-image:none!important;mask-image:none!important}
 
 /* Mobile hero: readable copy first, proportional artwork beneath it. */
 @media(max-width:700px){
