@@ -101,7 +101,7 @@
 /* Solid desktop hero background; the product image should not be washed by gradients. */
 .hero,.hero-art{background:#faeee5!important}
 .hero-art:after{display:none!important;background:none!important}
-.hero-art img{content:url('/images/maxrez-products-showcase-transparent-trimmed.png')!important;filter:drop-shadow(0 24px 24px rgba(70,35,30,.14))}
+.hero-art img{content:url('/images/hero-print-showcase-v2.png')!important;filter:drop-shadow(0 24px 24px rgba(70,35,30,.14))}
 
 /* Mobile hero: readable copy first, proportional artwork beneath it. */
 @media(max-width:700px){
