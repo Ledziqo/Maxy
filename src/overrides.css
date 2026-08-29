@@ -106,11 +106,11 @@
 @media(min-width:701px){
   .hero{position:relative;background:linear-gradient(90deg,#f9eadc 0%,#fdf3da 17.2%,#f4b39c 53%,#cf4d3e 88.9%,#cf4d3e 100%)!important}
   .hero:before,.hero:after{content:"";position:absolute;top:0;bottom:0;z-index:0;pointer-events:none}
-  .hero:before{left:0;width:17.3%;background:linear-gradient(180deg,#fdeed6 0%,#fdf3db 38%,#fdf3db 100%)}
-  .hero:after{right:0;width:calc(11.2% + 8px);background:linear-gradient(180deg,#d9473b 0%,#d9473b 38%,#d65345 54%,#d8755c 69%,#dd9d7c 84%,#e4bd95 100%)}
+  .hero:before{left:calc(17.3% - .2%);width:.2%;background:url('/images/hero-print-showcase-v2.png') left top/auto 100% no-repeat;filter:blur(12px);transform:scaleX(87);transform-origin:right center}
+  .hero:after{right:calc(11.2% - .2%);width:.2%;background:url('/images/hero-print-showcase-v2.png') right top/auto 100% no-repeat;filter:blur(12px);transform:scaleX(60);transform-origin:left center}
   .hero-copy{position:relative;z-index:2}
   .hero-art{position:absolute;inset:0;z-index:1;background:transparent!important}
-  .hero-art img{visibility:visible!important}
+  .hero-art img{visibility:visible!important;filter:none!important;-webkit-mask-image:none!important;mask-image:none!important}
 }
 
 /* Mobile hero: readable copy first, proportional artwork beneath it. */
