@@ -104,8 +104,9 @@
 .hero-art img{content:url('/images/hero-print-showcase-v2.png')!important;filter:drop-shadow(0 24px 24px rgba(70,35,30,.14))}
 .hero-art img{-webkit-mask-image:none!important;mask-image:none!important}
 @media(min-width:701px){
-  .hero{background:linear-gradient(90deg,#faeee2 0%,#faeee2 14%,#fae5d0 28%,#f5b39a 48%,#ec6b5b 72%,#e53b37 100%)!important}
+  .hero{background:#faeee2 url('/images/hero-print-showcase-v2.png') center/cover no-repeat!important}
   .hero-art{background:transparent!important}
+  .hero-art img{visibility:hidden!important}
 }
 
 /* Mobile hero: readable copy first, proportional artwork beneath it. */
