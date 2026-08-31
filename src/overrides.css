@@ -103,3 +103,33 @@
 .facility-map-pin span{display:grid;place-items:center;height:24px;padding:0 7px;border:2px solid #fff;border-radius:999px;background:#211a19;color:#fff;font:700 9px 'DM Mono',monospace;letter-spacing:.05em;box-shadow:0 2px 8px #211a1966}
 .leaflet-container{font-family:Manrope,Arial,sans-serif;color:#211b19}
 @media(max-width:800px){.zone-editor-map-canvas{height:360px}.zone-editor-map-help{font-size:9px}}
+
+/* Restore the hero composition from e593a52: zoomed-out v2 artwork with
+   the original edge-to-edge colour treatment. Keep this block last so later
+   dashboard and map additions cannot affect the storefront hero. */
+.hero,.hero-art{background:#faeee5!important}
+.hero-art:after{display:none!important;background:none!important}
+.hero-art img{content:url('/images/hero-print-showcase-v2.png')!important;filter:drop-shadow(0 24px 24px rgba(70,35,30,.14));-webkit-mask-image:none!important;mask-image:none!important}
+@media(min-width:701px){
+  .hero{position:relative;background:linear-gradient(90deg,#f9eadc 0%,#fdf3da 17.2%,#f4b39c 53%,#cf4d3e 88.9%,#cf4d3e 100%)!important}
+  .hero:before,.hero:after{content:"";position:absolute;top:0;bottom:0;z-index:0;pointer-events:none}
+  .hero:before{left:calc(17.3% - .2%);width:.2%;background:url('/images/hero-print-showcase-v2.png') left top/auto 100% no-repeat;filter:blur(12px);transform:scaleX(87);transform-origin:right center}
+  .hero:after{right:0;width:calc(11.2% + 70px);background:linear-gradient(180deg,#d9433a 0%,#d9433a 38%,#d65345 55%,#d8755c 70%,#dc9b79 85%,#e4bd98 100%)}
+  .hero-copy{position:relative;z-index:2}
+  .hero-art{position:absolute;inset:0;z-index:1;background:transparent!important}
+  .hero-art img{visibility:visible!important;filter:none!important;-webkit-mask-image:linear-gradient(90deg,#000 0%,#000 96.2%,transparent 100%)!important;mask-image:linear-gradient(90deg,#000 0%,#000 96.2%,transparent 100%)!important}
+}
+@media(max-width:700px){
+  .hero{display:flex!important;flex-direction:column!important;min-height:720px!important;padding:50px 18px 32px!important;gap:0!important;background:#faeee5!important}
+  .hero-copy{order:1!important;width:100%!important;max-width:none!important;padding:0!important;background:none!important;backdrop-filter:none!important}
+  .hero h1{font-size:clamp(42px,13vw,58px)!important;line-height:.98!important;margin:18px 0!important;letter-spacing:-.065em!important}
+  .hero h1 br{display:none!important}
+  .hero .lede{font-size:14px!important;line-height:1.65!important;max-width:36rem!important}
+  .hero-ctas{align-items:stretch!important;flex-direction:column!important;gap:10px!important;margin-top:22px!important;max-width:290px!important}
+  .hero-ctas .primary,.hero-ctas .text-link{justify-content:center!important;min-height:48px!important}
+  .trust-row{display:grid!important;grid-template-columns:1fr 1fr!important;gap:10px!important;margin-top:24px!important;font-size:10px!important;color:#4f4541!important}
+  .trust-row span{padding:8px 10px!important;border-radius:999px!important;background:rgba(250,238,229,.78)!important;backdrop-filter:blur(5px)}
+  .hero-art{position:relative!important;inset:auto!important;order:2!important;width:calc(100% + 36px)!important;height:270px!important;margin:22px -18px -32px!important;transform:none!important;overflow:hidden!important;background:linear-gradient(145deg,#faeee5 0%,#f7c6b5 56%,#b93745 100%)!important}
+  .hero-art:after{display:none!important;background:none!important}
+  .hero-art img{content:url('/images/hero-print-showcase-v2.png')!important;position:absolute!important;left:50%!important;top:auto!important;bottom:-18px!important;width:auto!important;height:55%!important;max-width:none!important;object-fit:contain!important;transform:translateX(-50%)!important;filter:none!important;mask-image:linear-gradient(180deg,transparent 0%,#000 22%,#000 100%)!important;-webkit-mask-image:linear-gradient(180deg,transparent 0%,#000 22%,#000 100%)!important}
+}
