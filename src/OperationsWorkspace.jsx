@@ -6,8 +6,36 @@ const statuses = ['new', 'confirmed', 'paid', 'out_for_delivery', 'completed', '
 function money(value) { return `${Math.round(Number(value || 0)).toLocaleString()} ETB` }
 function sessionData() { try { return JSON.parse(localStorage.getItem('maxrez-session') || 'null') } catch { return null } }
 
+function StaffLogin({ api, onSuccess, go }) {
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [busy, setBusy] = useState(false)
+
+  const submit = async event => {
+    event.preventDefault()
+    setBusy(true)
+    setError('')
+    try {
+      const data = await api('/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      })
+      localStorage.setItem('maxrez-session', JSON.stringify(data))
+      onSuccess(data)
+    } catch (e) {
+      setError(e.message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return <main className="workspace-empty"><form className="modal login-card" onSubmit={submit}><div className="eyebrow">STAFF ACCESS</div><h1>Welcome to Maxrez.</h1><p className="muted">Sign in to manage orders, payments, pricing, and delivery.</p><label>Email<input required type="email" value={email} onChange={e => setEmail(e.target.value)} autoComplete="username" /></label><label>Password<input required type="password" value={password} onChange={e => setPassword(e.target.value)} autoComplete="current-password" /></label>{error && <p className="error-text">{error}</p>}<button className="primary full" disabled={busy}>{busy ? 'Signing in…' : 'Open staff workspace'}</button><button type="button" className="back login-back" onClick={() => go('/')}>← Back to storefront</button></form></main>
+}
+
 export default function OperationsWorkspace({ api, go }) {
-  const session = sessionData()
+  const [session, setSession] = useState(sessionData)
   const headers = session ? { Authorization: `Bearer ${session.token}` } : {}
   const [tab, setTab] = useState('orders')
   const [orders, setOrders] = useState([])
@@ -32,7 +60,7 @@ export default function OperationsWorkspace({ api, go }) {
       try { setMethods(await api('/payment-methods')) } catch (e) { setError(e.message) }
     }
   }
-  useEffect(() => { load() }, [])
+  useEffect(() => { load() }, [session])
 
   const filteredOrders = useMemo(() => {
     const q = search.trim().toLowerCase()
@@ -51,7 +79,7 @@ export default function OperationsWorkspace({ api, go }) {
   const saveMethod = async method => { try { await api(`/payment-methods/${method.id}`, { method: 'PATCH', headers: { ...headers, 'Content-Type': 'application/json' }, body: JSON.stringify({ accountLabel: method.account_label, instructions: method.instructions }) }); show(`${method.name} details saved.`); load() } catch (e) { setError(e.message) } }
   const uploadQr = async (id, file) => { const body = new FormData(); body.append('qr', file); try { await api(`/admin/payment-methods/${id}/qr`, { method: 'POST', headers, body }); show('Payment QR updated.'); load() } catch (e) { setError(e.message) } }
 
-  if (!session) return <main className="workspace-empty"><h1>Sign in required</h1><button className="primary" onClick={() => go('/staff')}>Open staff login</button></main>
+  if (!session) return <StaffLogin api={api} onSuccess={setSession} go={go} />
   const tabs = session.user.role === 'admin' ? [['orders', 'Orders'], ['payments', 'Payments'], ['pricing', 'Pricing'], ['delivery', 'Delivery zones'], ['people', 'Staff & admins'], ['payments-settings', 'Payment settings']] : [['orders', 'Orders'], ['payments', 'Payments']]
 
   return <main className="workspace workspace-v3">

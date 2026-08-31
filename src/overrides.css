@@ -4,7 +4,7 @@
 .hero{background:#faeee5!important}
 .hero-art{background:transparent!important}
 .hero-art::after{display:none!important}
-.hero-art img{content:url('/images/hero-print-showcase-v2.png')!important;width:100%!important;height:100%!important;max-width:none!important;object-fit:cover!important;object-position:center!important;transform:none!important;filter:none!important;mask-image:none!important;-webkit-mask-image:none!important}
+.hero-art img{content:url('/images/hero-print-showcase.png')!important;width:100%!important;height:100%!important;max-width:none!important;object-fit:cover!important;object-position:center!important;transform:none!important;filter:none!important;mask-image:none!important;-webkit-mask-image:none!important}
 .service-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
 .service-card{padding:14px}
 .service-image{height:auto;aspect-ratio:3/2;padding:8px;background:#eee8e2;display:grid;place-items:center}
@@ -42,7 +42,7 @@
   .trust-row span{display:flex;min-width:0;justify-content:center;gap:5px;padding:8px 4px;border:1px solid #eaded4;border-radius:4px;background:rgba(255,255,255,.72);white-space:nowrap}
   .trust-row svg{width:14px;height:14px;flex:0 0 auto}
   .hero-art{position:relative!important;inset:auto!important;z-index:1;order:2;width:calc(100% + 36px);height:265px;margin:24px -18px 0;transform:none!important;overflow:hidden;display:block;background:transparent!important}
-  .hero-art img{position:absolute!important;left:50%!important;right:auto!important;top:0!important;bottom:auto!important;width:145%!important;height:auto!important;max-width:none!important;object-fit:contain!important;object-position:center!important;transform:translateX(-50%)!important;filter:none!important}
+  .hero-art img{position:absolute!important;left:0!important;right:auto!important;top:0!important;bottom:auto!important;width:100%!important;height:100%!important;max-width:none!important;object-fit:contain!important;object-position:center!important;transform:none!important;filter:none!important}
   .service-grid{grid-template-columns:1fr;gap:18px}
   .service-image{aspect-ratio:3/2;padding:5px}
   .service-image img{object-fit:contain!important}
