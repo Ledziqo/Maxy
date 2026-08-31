@@ -139,8 +139,11 @@ async function deliveryEstimate({ address, zone, urgent, lat, lng }) {
   try {
     const [zones]=await pool.query('SELECT * FROM delivery_zones WHERE active=1 ORDER BY radius_km')
     if (destinationLat !== null && destinationLng !== null) {
-      distanceFromFacility=distanceKm(facilityCoordinates,{lat:destinationLat,lng:destinationLng})
-      matchedZone=zones.find(row=>Number(row.radius_km)>=distanceFromFacility) || null
+      const destination={lat:destinationLat,lng:destinationLng}
+      const candidates=zones.map(row=>{const centerLat=numberOrNull(row.center_lat),centerLng=numberOrNull(row.center_lng);const center=centerLat!==null&&centerLng!==null?{lat:centerLat,lng:centerLng}:facilityCoordinates;return {row,distance:distanceKm(center,destination)}})
+      const match=candidates.find(candidate=>Number(candidate.row.radius_km)>=candidate.distance) || null
+      distanceFromFacility=match?.distance ?? candidates.sort((a,b)=>a.distance-b.distance)[0]?.distance ?? null
+      matchedZone=match?.row || null
     }
     if (!matchedZone && zone) matchedZone=zones.find(row=>row.name.toLowerCase()===String(zone).toLowerCase()) || null
     if (matchedZone) { fallbackFee=Number(matchedZone.fee); fallbackMinutes=Number(matchedZone.eta_minutes) }

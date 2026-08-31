@@ -21,6 +21,7 @@
     "express-rate-limit": "latest",
     "helmet": "latest",
     "jsonwebtoken": "latest",
+    "leaflet": "^1.9.4",
     "lucide-react": "latest",
     "multer": "latest",
     "mysql2": "latest",
