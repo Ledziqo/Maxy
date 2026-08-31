@@ -7,8 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "server": "node server/index.js",
-    "start": "node server/index.js",
+    "server": "node server.js",
+    "start": "node server.js",
     "verify": "node --check server/index.js && node --check server/seed-admin.js && npm run build",
     "seed-admin": "node server/seed-admin.js"
   },
