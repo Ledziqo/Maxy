@@ -9,6 +9,7 @@
     "preview": "vite preview",
     "server": "node server/index.js",
     "start": "node server/index.js",
+    "verify": "node --check server/index.js && node --check server/seed-admin.js && npm run build",
     "seed-admin": "node server/seed-admin.js"
   },
   "dependencies": {

@@ -7,6 +7,10 @@ import './settings.css'
 import './overrides.css'
 import SettingsPanel from './SettingsPanel.jsx'
 import AdminAccounts from './AdminAccounts.jsx'
+import OperationsWorkspace from './OperationsWorkspace.jsx'
+import TrackingPageV2 from './TrackingPageV2.jsx'
+import PublicHeader from './PublicHeader.jsx'
+import TrackLookup from './TrackLookup.jsx'
 
 const API = import.meta.env.VITE_API_URL || '/api'
 const facility = { address: 'Gabon Street Woreda 02, House no. 359', city: 'Addis Ababa, 7202, Ethiopia', phone: '+251 91 120 7630', email: 'info@maxrezgraphics.com' }
@@ -37,25 +41,25 @@ function money(value){ return `${Math.round(Number(value||0)).toLocaleString()} 
 function navigate(path,setPath){ history.pushState({},'',path); setPath(path); window.scrollTo(0,0) }
 
 function App(){
-  if(location.pathname==='/setup') return <SetupV2/>
   const [path,setPath]=useState(location.pathname)
   const [menu,setMenu]=useState(false)
   const [customer,setCustomer]=useState(()=>JSON.parse(localStorage.getItem('maxrez-customer')||'null'))
   const [accountOpen,setAccountOpen]=useState(false)
   useEffect(()=>{const fn=()=>setPath(location.pathname);addEventListener('popstate',fn);return()=>removeEventListener('popstate',fn)},[])
   const go=p=>navigate(p,setPath)
+  if(path==='/setup') return <SetupV2/>
   let page=<Store go={go} customer={customer}/>
   if(path==='/order')page=<OrderPage customer={customer} go={go}/>
   if(path==='/work')page=<WorkPage go={go}/>
   if(path==='/visit')page=<VisitPage go={go}/>
+  if(path==='/track')page=<TrackLookup go={go}/>
   if(path==='/industries')page=<IndustriesPage go={go}/>
-  if(path==='/account')page=<CustomerDashboard customer={customer} go={go} onLogin={()=>setAccountOpen(true)}/>
-  if(path==='/staff')page=<AdminShell go={go}/>
+  if(path==='/staff')page=<OperationsWorkspace api={api} go={go}/>
   if(path==='/settings')page=<SettingsPanel api={api}/>
   if(path==='/admin-accounts')page=<AdminAccounts api={api}/>
-  if(path.startsWith('/track/'))page=<TrackingPage token={path.split('/').pop()} go={go}/>
+  if(path.startsWith('/track/'))page=<TrackingPageV2 api={api} token={path.split('/').pop()} go={go}/>
   if(path.startsWith('/policies/'))page=<PolicyPage type={path.split('/').pop()} go={go}/>
-  return <div className="app commerce-app"><Header go={go} menu={menu} setMenu={setMenu} customer={customer} onAccount={()=>customer?go('/account'):setAccountOpen(true)}/>{page}<Footer go={go}/>{accountOpen&&<AccountModal onClose={()=>setAccountOpen(false)} onSuccess={session=>{localStorage.setItem('maxrez-customer',JSON.stringify(session));setCustomer(session);setAccountOpen(false);go('/account')}}/>}</div>
+  return <div className="app commerce-app"><PublicHeader go={go} menu={menu} setMenu={setMenu}/>{page}<Footer go={go}/></div>
 }
 
 function Header({go,menu,setMenu,customer,onAccount}){const open=path=>{go(path);setMenu(false)};return <header className={'nav '+(menu?'nav-open':'')}><button className="brand brand-button" onClick={()=>open('/')} aria-label="Maxrez home"><span className="brand-mark">M</span><span>MAXREZ<small>GRAPHICS & PRINTING</small></span></button><nav><button onClick={()=>open('/order')}>Order & price</button><button onClick={()=>{open('/');setTimeout(()=>document.getElementById('services')?.scrollIntoView({behavior:'smooth'}),30)}}>Services</button><button onClick={()=>open('/work')}>Our work</button><button onClick={()=>open('/visit')}>Visit us</button></nav><div className="nav-actions"><button className="account-button" onClick={onAccount}><User size={17}/><span>{customer?.user?.name?.split(' ')[0]||'Account'}</span></button><button className="outline desktop-staff" onClick={()=>open('/staff')}>Staff login</button><button className="menu" aria-label="Toggle navigation" onClick={()=>setMenu(!menu)}>{menu?<X/>:<Menu/>}</button></div></header> }
@@ -108,7 +112,7 @@ function WorkspaceV2({go}){const[session,setSession]=useState(()=>JSON.parse(loc
 
 function Setup(){const[form,setForm]=useState({setupKey:'',adminName:'',adminEmail:'',adminPassword:'',paymentMethods:[{name:'Telebirr',accountLabel:'',instructions:''}],deliveryZones:['Bole','Kazanchis','Piassa']}),[state,setState]=useState('idle'),[error,setError]=useState('');const submit=async e=>{e.preventDefault();setState('busy');try{await api('/setup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(form)});setState('done')}catch(e){setError(e.message);setState('idle')}};if(state==='done')return <div className="setup-page"><div className="setup-card"><h1>Your workspace is ready.</h1><a className="primary full" href="/">Open Maxrez</a></div></div>;return <div className="setup-page"><form className="setup-card" onSubmit={submit}><div className="eyebrow">MAXREZ.CC / SETUP</div><h1>Launch your print workspace.</h1><Field label="Setup key"><input type="password" value={form.setupKey} onChange={e=>setForm({...form,setupKey:e.target.value})}/></Field><Field label="Admin name"><input value={form.adminName} onChange={e=>setForm({...form,adminName:e.target.value})}/></Field><Field label="Admin email"><input type="email" value={form.adminEmail} onChange={e=>setForm({...form,adminEmail:e.target.value})}/></Field><Field label="Admin password"><input type="password" value={form.adminPassword} onChange={e=>setForm({...form,adminPassword:e.target.value})}/></Field><h3>First payment account</h3><Field label="Telebirr / account number"><input value={form.paymentMethods[0].accountLabel} onChange={e=>setForm({...form,paymentMethods:[{...form.paymentMethods[0],accountLabel:e.target.value}]})}/></Field>{error&&<p className="error-text">{error}</p>}<button className="primary full" disabled={state==='busy'}>{state==='busy'?'Setting up…':'Run setup'}</button></form></div>}
 
-function SetupV2(){const[password,setPassword]=useState(''),[error,setError]=useState(''),[done,setDone]=useState(false);const submit=async e=>{e.preventDefault();try{await api('/setup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({setupPassword:password})});setDone(true)}catch(e){setError(e.message)}};if(done)return <div className="setup-page"><div className="setup-card"><h1>Your workspace is ready.</h1><p className="muted">Admin login: Mudi@gmail.com</p><a className="primary full" href="/">Open Maxrez</a></div></div>;return <div className="setup-page"><form className="setup-card" onSubmit={submit}><div className="eyebrow">MAXREZ.CC / SETUP</div><h1>One-click workspace setup.</h1><p className="muted">Enter the setup password to create the Maxrez administrator account.</p><Field label="Setup password"><input autoFocus type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="Enter setup password"/></Field>{error&&<p className="error-text">{error}</p>}<button className="primary full">Run setup</button></form></div>}
+function SetupV2(){const[password,setPassword]=useState(''),[error,setError]=useState(''),[done,setDone]=useState(false);const submit=async e=>{e.preventDefault();try{await api('/setup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({setupPassword:password})});setDone(true)}catch(e){setError(e.message)}};if(done)return <div className="setup-page"><div className="setup-card"><h1>Your workspace is ready.</h1><p className="muted">Sign in with the administrator email configured in Hostinger.</p><a className="primary full" href="/">Open Maxrez</a></div></div>;return <div className="setup-page"><form className="setup-card" onSubmit={submit}><div className="eyebrow">MAXREZ.CC / SETUP</div><h1>One-click workspace setup.</h1><p className="muted">Enter the setup password to create the Maxrez administrator account.</p><Field label="Setup password"><input autoFocus type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="Enter setup password"/></Field>{error&&<p className="error-text">{error}</p>}<button className="primary full">Run setup</button></form></div>}
 
 function PaymentMethods({result}){const[methods,setMethods]=useState([]);useEffect(()=>{api('/payment-methods').then(setMethods).catch(()=>{})},[]);if(!methods.length)return null;return <div className="payment-methods"><div className="eyebrow">PAYMENT OPTIONS</div><p>After we confirm your order, pay using any option below and send the receipt with your order number.</p>{methods.map(m=><article key={m.id}><div><b>{m.name}</b><strong>{m.account_label}</strong><small>{m.instructions}</small></div>{m.qr_url&&<img src={m.qr_url} alt={`${m.name} QR code`}/>}</article>)}</div>}
 function Footer({go}){return <footer><div><button className="brand brand-button" onClick={()=>go('/')}><span>MAXREZ<small>GRAPHICS & PRINTING</small></span></button><p>Design, print, finishing, pickup, and delivery across Addis Ababa.</p></div><div><strong>Visit us</strong><p>{facility.address}<br/>{facility.city}</p></div><div><strong>Policies</strong><p><button onClick={()=>go('/policies/terms')}>Terms of service</button><br/><button onClick={()=>go('/policies/refunds')}>Reprints & refunds</button><br/><button onClick={()=>go('/policies/delivery')}>Pickup & delivery</button><br/><button onClick={()=>go('/policies/privacy')}>Privacy & artwork</button></p></div><div><strong>Talk to us</strong><p>{facility.phone}<br/>{facility.email}<br/><a className="telegram-link" href="https://t.me/Aesliex" target="_blank" rel="noreferrer">Telegram: @Aesliex</a></p></div></footer>}

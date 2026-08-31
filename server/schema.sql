@@ -51,6 +51,8 @@ CREATE TABLE IF NOT EXISTS delivery_zones (
   radius_km DECIMAL(8,2) NOT NULL,
   fee DECIMAL(12,2) NOT NULL DEFAULT 0,
   eta_minutes INT NOT NULL DEFAULT 60,
+  center_lat DECIMAL(10,7),
+  center_lng DECIMAL(10,7),
   active BOOLEAN NOT NULL DEFAULT TRUE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
@@ -73,7 +75,12 @@ CREATE TABLE IF NOT EXISTS orders (
   unit_price DECIMAL(12,2) DEFAULT 0,
   total_amount DECIMAL(12,2),
   currency CHAR(3) NOT NULL DEFAULT 'ETB',
-  status ENUM('new','quoted','awaiting_payment','payment_verification','payment_confirmed','design_review','approved','printing','finishing','quality_check','ready','dispatched','delivered','cancelled') NOT NULL DEFAULT 'new',
+  status ENUM('new','confirmed','paid','out_for_delivery','completed','cancelled') NOT NULL DEFAULT 'new',
+  payment_status ENUM('unpaid','submitted','verified','rejected') NOT NULL DEFAULT 'unpaid',
+  payment_method VARCHAR(80),
+  payment_note TEXT,
+  payment_verified_by INT NULL,
+  payment_verified_at DATETIME NULL,
   urgent BOOLEAN NOT NULL DEFAULT FALSE,
   fulfillment_method ENUM('pickup','delivery') NOT NULL DEFAULT 'pickup',
   delivery_address TEXT,
@@ -89,7 +96,11 @@ CREATE TABLE IF NOT EXISTS orders (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (customer_id) REFERENCES customer_accounts(id) ON DELETE SET NULL,
   FOREIGN KEY (product_id) REFERENCES product_catalog(id) ON DELETE SET NULL,
-  FOREIGN KEY (assigned_worker_id) REFERENCES users(id) ON DELETE SET NULL
+  FOREIGN KEY (assigned_worker_id) REFERENCES users(id) ON DELETE SET NULL,
+  FOREIGN KEY (payment_verified_by) REFERENCES users(id) ON DELETE SET NULL,
+  INDEX idx_orders_status_created (status, created_at),
+  INDEX idx_orders_worker_status (assigned_worker_id, status),
+  INDEX idx_orders_customer_created (customer_id, created_at)
 );
 
 CREATE TABLE IF NOT EXISTS order_files (

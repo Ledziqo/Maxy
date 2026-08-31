@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /staff
+Disallow: /setup
+Disallow: /api/
+
+Sitemap: https://maxrez.cc/sitemap.xml

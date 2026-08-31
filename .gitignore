@@ -1,6 +1,8 @@
 node_modules/
 dist/
 .env
+maxrez-hostinger.env
 private-uploads/
+public-payment-qr/
 setup-config.json
 *.log
