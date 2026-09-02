@@ -20,7 +20,7 @@ export default function ZoneEditorMap({ zones, setZones }) {
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return
     const map = L.map(containerRef.current, { scrollWheelZoom: true }).setView(facility, 12)
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap contributors' }).addTo(map)
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap contributors' }).addTo(map)
     L.marker(facility, { icon: L.divIcon({ className: 'facility-map-pin', html: '<span>MAXREZ</span>', iconSize: [68, 24], iconAnchor: [34, 12] }) }).addTo(map).bindTooltip('Maxrez facility', { direction: 'top' })
     mapRef.current = map
     setTimeout(() => map.invalidateSize(), 80)

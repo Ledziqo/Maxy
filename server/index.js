@@ -26,7 +26,10 @@ const pool = mysql.createPool({ uri: process.env.DATABASE_URL, waitForConnection
 const upload = multer({ dest: uploadDir, limits: { fileSize: 25 * 1024 * 1024 }, fileFilter: (_req, file, cb) => cb(null, /^(image|application\/pdf)/.test(file.mimetype)) })
 const qrUpload = multer({ dest: paymentQrDir, limits: { fileSize: 5 * 1024 * 1024 }, fileFilter: (_req, file, cb) => cb(null, /^image\/(png|jpeg|webp)$/.test(file.mimetype)) })
 
-app.use(helmet({ crossOriginResourcePolicy: false }))
+app.use(helmet({
+  crossOriginResourcePolicy: false,
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' }
+}))
 const allowedOrigins = (process.env.FRONTEND_ORIGIN || 'https://maxrez.cc,http://localhost:5173,http://localhost:3001').split(',').map(x => x.trim()).filter(Boolean)
 app.use(cors({ origin: (origin, callback) => !origin || allowedOrigins.includes(origin) ? callback(null, true) : callback(new Error('Origin not allowed')) }))
 app.use(express.json({ limit: '3mb' }))
