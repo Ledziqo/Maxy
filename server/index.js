@@ -62,6 +62,13 @@ const defaultRules = {
 const productSeeds = [
   ['business-cards','Business Cards','Cards & stationery',4.5,50],['brochures','Brochures & Flyers','Marketing print',8,25],['labels','Labels & Stickers','Labels',3.5,50],['books','Books & Catalogues','Publishing',65,10],['packaging','Boxes & Packaging','Packaging',35,25],['restaurant-print','Restaurant Print Pack','Industry bundles',28,25],['large-format','Banners & Large Format','Large format',180,1],['custom','Custom Print Project','Custom',1,1]
 ]
+const deliveryTierSeeds = [
+  ['Up to 0.5 km', 0, 0.5, 0, 15],
+  ['0.5–3 km', 0.5, 3, 100, 25],
+  ['3–5 km', 3, 5, 150, 35],
+  ['5–8 km', 5, 8, 250, 45],
+  ['8–15 km', 8, 15, 300, 60]
+]
 
 async function ensureSchema() {
   const schema = fs.readFileSync(path.resolve('server/schema.sql'), 'utf8')
@@ -87,16 +94,19 @@ async function ensureSchema() {
     'ALTER TABLE orders ADD COLUMN payment_note TEXT NULL AFTER payment_method',
     'ALTER TABLE orders ADD COLUMN payment_verified_by INT NULL AFTER payment_note',
     'ALTER TABLE orders ADD COLUMN payment_verified_at DATETIME NULL AFTER payment_verified_by',
-    'ALTER TABLE order_files ADD COLUMN validation_report JSON NULL AFTER size_bytes'
+    'ALTER TABLE order_files ADD COLUMN validation_report JSON NULL AFTER size_bytes',
+    'ALTER TABLE delivery_zones ADD COLUMN min_km DECIMAL(8,2) NULL AFTER name'
   ]
   for (const sql of migrations) { try { await pool.query(sql) } catch (error) { if (!/Duplicate column|already exists|Duplicate key/i.test(error.message)) console.warn(error.message) } }
-  await pool.query('CREATE TABLE IF NOT EXISTS delivery_zones (id INT AUTO_INCREMENT PRIMARY KEY,name VARCHAR(100) NOT NULL,radius_km DECIMAL(8,2) NOT NULL,fee DECIMAL(12,2) NOT NULL DEFAULT 0,eta_minutes INT NOT NULL DEFAULT 60,center_lat DECIMAL(10,7),center_lng DECIMAL(10,7),active BOOLEAN NOT NULL DEFAULT TRUE,created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP)').catch(() => {})
+  await pool.query('CREATE TABLE IF NOT EXISTS delivery_zones (id INT AUTO_INCREMENT PRIMARY KEY,name VARCHAR(100) NOT NULL,min_km DECIMAL(8,2),radius_km DECIMAL(8,2) NOT NULL,fee DECIMAL(12,2) NOT NULL DEFAULT 0,eta_minutes INT NOT NULL DEFAULT 60,center_lat DECIMAL(10,7),center_lng DECIMAL(10,7),active BOOLEAN NOT NULL DEFAULT TRUE,created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP)').catch(() => {})
   for (const sql of ['ALTER TABLE delivery_zones ADD COLUMN center_lat DECIMAL(10,7) NULL', 'ALTER TABLE delivery_zones ADD COLUMN center_lng DECIMAL(10,7) NULL']) { try { await pool.query(sql) } catch (error) { if (!/Duplicate column|already exists/i.test(error.message)) console.warn(error.message) } }
   const [untracked] = await pool.query('SELECT id FROM orders WHERE tracking_token IS NULL').catch(() => [[]])
   for (const order of untracked) await pool.query('UPDATE orders SET tracking_token=? WHERE id=?', [trackingToken(),order.id])
   const [count] = await pool.query('SELECT COUNT(*) count FROM product_catalog')
   if (!Number(count[0].count)) for (let i = 0; i < productSeeds.length; i++) { const [slug,name,category,base,min] = productSeeds[i]; await pool.query('INSERT INTO product_catalog (slug,name,description,category,base_price,minimum_quantity,pricing_rules,sort_order) VALUES (?,?,?,?,?,?,?,?)', [slug,name,`Configure ${name.toLowerCase()} and receive an instant estimate.`,category,base,min,JSON.stringify(defaultRules),i]) }
   for (const [name, sort] of [['Telebirr',0],['CBE Birr',1],['Awash Bank',2]]) { const [rows]=await pool.query('SELECT id FROM payment_methods WHERE LOWER(name)=LOWER(?) LIMIT 1',[name]); if(!rows[0]) await pool.query('INSERT INTO payment_methods (name,instructions,account_label,sort_order) VALUES (?, ?, ?, ?)',[name,'Send the payment receipt with your order number.','',sort]) }
+  const [tierCount] = await pool.query('SELECT COUNT(*) count FROM delivery_zones WHERE min_km IS NOT NULL')
+  if (!Number(tierCount[0].count)) for (const [name,minKm,maxKm,fee,eta] of deliveryTierSeeds) await pool.query('INSERT INTO delivery_zones (name,min_km,radius_km,fee,eta_minutes,center_lat,center_lng) VALUES (?,?,?,?,?,?,?)',[name,minKm,maxKm,fee,eta,facilityCoordinates.lat,facilityCoordinates.lng])
 }
 
 function parseJson(value, fallback = {}) { if (!value) return fallback; if (typeof value === 'object') return value; try { return JSON.parse(value) } catch { return fallback } }
@@ -135,25 +145,24 @@ function readRasterDimensions(buffer,mime) {
   return {width:0,height:0}
 }
 
-async function deliveryEstimate({ address, zone, urgent, lat, lng }) {
-  const defaults = ({ Bole:[30,180], Kazanchis:[35,190], Piassa:[45,230], Saris:[30,190], Mexico:[35,200] }[zone] || [50,250])
-  let fallbackMinutes=defaults[0],fallbackFee=defaults[1],matchedZone=null,distanceFromFacility=null
+async function deliveryEstimate({ address, lat, lng }) {
+  const [tiers] = await pool.query('SELECT * FROM delivery_zones WHERE active=1 AND min_km IS NOT NULL ORDER BY radius_km')
+  const matchTier = km => tiers.find(tier => km >= Number(tier.min_km) && km <= Number(tier.radius_km)) || null
   const destinationLat=numberOrNull(lat), destinationLng=numberOrNull(lng)
-  try {
-    const [zones]=await pool.query('SELECT * FROM delivery_zones WHERE active=1 ORDER BY radius_km')
-    if (destinationLat !== null && destinationLng !== null) {
-      const destination={lat:destinationLat,lng:destinationLng}
-      const candidates=zones.map(row=>{const centerLat=numberOrNull(row.center_lat),centerLng=numberOrNull(row.center_lng);const center=centerLat!==null&&centerLng!==null?{lat:centerLat,lng:centerLng}:facilityCoordinates;return {row,distance:distanceKm(center,destination)}})
-      const match=candidates.find(candidate=>Number(candidate.row.radius_km)>=candidate.distance) || null
-      distanceFromFacility=match?.distance ?? candidates.sort((a,b)=>a.distance-b.distance)[0]?.distance ?? null
-      matchedZone=match?.row || null
-    }
-    if (!matchedZone && zone) matchedZone=zones.find(row=>row.name.toLowerCase()===String(zone).toLowerCase()) || null
-    if (matchedZone) { fallbackFee=Number(matchedZone.fee); fallbackMinutes=Number(matchedZone.eta_minutes) }
-  } catch {}
-  fallbackMinutes += urgent ? 10 : 20; fallbackFee += urgent ? 80 : 0
-  const serviceable=destinationLat!==null&&destinationLng!==null?Boolean(matchedZone):Boolean(matchedZone||zone)
-  const fallback={ source:'zone', zone:matchedZone?.name || zone || null, durationSeconds:fallbackMinutes*60, distanceMeters:distanceFromFacility===null?null:Math.round(distanceFromFacility*1000), fee:fallbackFee, trafficAware:false, serviceable }
+  let distanceFromFacility=destinationLat!==null&&destinationLng!==null?distanceKm(facilityCoordinates,{lat:destinationLat,lng:destinationLng}):null
+  let matchedTier=distanceFromFacility===null?null:matchTier(distanceFromFacility)
+  const result = (source, trafficAware, durationSeconds, distanceMeters) => ({
+    source,
+    tier:matchedTier?.name || null,
+    zone:matchedTier?.name || null,
+    durationSeconds:matchedTier ? Math.max(Number(matchedTier.eta_minutes)*60,durationSeconds||0) : durationSeconds||0,
+    distanceMeters,
+    distanceKm:distanceMeters===null?null:Number((distanceMeters/1000).toFixed(2)),
+    fee:matchedTier ? Number(matchedTier.fee) : 0,
+    trafficAware,
+    serviceable:Boolean(matchedTier)
+  })
+  const fallback=result('distance',false,matchedTier?Number(matchedTier.eta_minutes)*60:0,distanceFromFacility===null?null:Math.round(distanceFromFacility*1000))
   if (!process.env.GOOGLE_MAPS_API_KEY || (!address && (destinationLat === null || destinationLng === null))) return fallback
   try {
     const controller=new AbortController(); const timeout=setTimeout(()=>controller.abort(),6000)
@@ -161,7 +170,7 @@ async function deliveryEstimate({ address, zone, urgent, lat, lng }) {
     const response=await fetch('https://routes.googleapis.com/directions/v2:computeRoutes',{method:'POST',signal:controller.signal,headers:{'Content-Type':'application/json','X-Goog-Api-Key':process.env.GOOGLE_MAPS_API_KEY,'X-Goog-FieldMask':'routes.duration,routes.distanceMeters'},body:JSON.stringify({origin:{address:facilityAddress},destination,travelMode:'DRIVE',routingPreference:'TRAFFIC_AWARE_OPTIMAL',departureTime:new Date(Date.now()+60000).toISOString()})})
     clearTimeout(timeout); if(!response.ok)throw new Error('Routes unavailable')
     const route=(await response.json()).routes?.[0]; if(!route)throw new Error('No route')
-    const seconds=Number(String(route.duration).replace('s','')); return {...fallback,source:'google',durationSeconds:Math.max(seconds,fallback.durationSeconds),distanceMeters:route.distanceMeters,trafficAware:true}
+    const seconds=Number(String(route.duration).replace('s','')); distanceFromFacility=Number(route.distanceMeters)/1000; matchedTier=matchTier(distanceFromFacility); return result('google',true,seconds,Number(route.distanceMeters))
   } catch { return fallback }
 }
 
@@ -181,9 +190,9 @@ app.post('/api/admin/staff', auth, roles('admin'), async (req,res) => { const {n
 app.patch('/api/admin/staff/:id', auth, roles('admin'), async (req,res) => { const {name,email,password,role,active}=req.body; if(role&&!['admin','worker'].includes(role))return res.status(400).json({error:'Invalid role'}); const hash=password&&password.length>=8?await bcrypt.hash(password,12):null; await pool.query('UPDATE users SET name=COALESCE(?,name),email=COALESCE(?,email),password_hash=COALESCE(?,password_hash),role=COALESCE(?,role),active=COALESCE(?,active) WHERE id=?',[name,email?normalizeEmail(email):null,hash,role,active,req.params.id]); res.json({ok:true}) })
 app.get('/api/admin/customers', auth, roles('admin','worker'), async (_req,res) => { const [rows]=await pool.query('SELECT c.id,c.name,c.email,c.phone,c.created_at,COUNT(o.id) order_count FROM customer_accounts c LEFT JOIN orders o ON o.customer_id=c.id GROUP BY c.id ORDER BY c.created_at DESC'); res.json(rows) })
 app.get('/api/admin/customers/:id/orders', auth, roles('admin','worker'), async (req,res) => { const [rows]=await pool.query('SELECT public_id,tracking_token,service,total_amount,status,fulfillment_method,created_at,updated_at FROM orders WHERE customer_id=? ORDER BY created_at DESC',[req.params.id]); res.json(rows) })
-app.get('/api/admin/delivery-zones', auth, roles('admin'), async (_req,res) => { const [rows]=await pool.query('SELECT * FROM delivery_zones ORDER BY radius_km'); res.json(rows) })
-app.post('/api/admin/delivery-zones', auth, roles('admin'), async (req,res) => { const {name,radiusKm,fee,etaMinutes=60,centerLat,centerLng}=req.body; if(!name||!Number.isFinite(Number(radiusKm))||Number(radiusKm)<=0||!Number.isFinite(Number(fee))||Number(fee)<0||!Number.isFinite(Number(etaMinutes))||Number(etaMinutes)<=0)return res.status(400).json({error:'Name, positive radius, fee, and ETA are required'});const [result]=await pool.query('INSERT INTO delivery_zones (name,radius_km,fee,eta_minutes,center_lat,center_lng) VALUES (?,?,?,?,?,?)',[name,Number(radiusKm),Number(fee),Number(etaMinutes),numberOrNull(centerLat),numberOrNull(centerLng)]);res.status(201).json({id:result.insertId}) })
-app.patch('/api/admin/delivery-zones/:id', auth, roles('admin'), async (req,res) => { const {name,radiusKm,fee,etaMinutes,active,centerLat,centerLng}=req.body; await pool.query('UPDATE delivery_zones SET name=COALESCE(?,name),radius_km=COALESCE(?,radius_km),fee=COALESCE(?,fee),eta_minutes=COALESCE(?,eta_minutes),center_lat=COALESCE(?,center_lat),center_lng=COALESCE(?,center_lng),active=COALESCE(?,active) WHERE id=?',[name,radiusKm,fee,etaMinutes,numberOrNull(centerLat),numberOrNull(centerLng),active,req.params.id]);res.json({ok:true}) })
+app.get('/api/admin/delivery-zones', auth, roles('admin'), async (_req,res) => { const [rows]=await pool.query('SELECT * FROM delivery_zones WHERE min_km IS NOT NULL ORDER BY radius_km'); res.json(rows) })
+app.post('/api/admin/delivery-zones', auth, roles('admin'), async (req,res) => { const {name,minKm,radiusKm,fee,etaMinutes=60}=req.body; const min=Number(minKm),max=Number(radiusKm),price=Number(fee),eta=Number(etaMinutes); if(!name||!Number.isFinite(min)||min<0||!Number.isFinite(max)||max<=min||!Number.isFinite(price)||price<0||!Number.isFinite(eta)||eta<=0)return res.status(400).json({error:'Name, valid minimum and maximum kilometres, fee, and ETA are required'});const [result]=await pool.query('INSERT INTO delivery_zones (name,min_km,radius_km,fee,eta_minutes,center_lat,center_lng) VALUES (?,?,?,?,?,?,?)',[name,min,max,price,eta,facilityCoordinates.lat,facilityCoordinates.lng]);res.status(201).json({id:result.insertId}) })
+app.patch('/api/admin/delivery-zones/:id', auth, roles('admin'), async (req,res) => { const {name,minKm,radiusKm,fee,etaMinutes,active}=req.body; const min=minKm===undefined?null:Number(minKm),max=radiusKm===undefined?null:Number(radiusKm),price=fee===undefined?null:Number(fee),eta=etaMinutes===undefined?null:Number(etaMinutes); if((min!==null&&(!Number.isFinite(min)||min<0))||(max!==null&&(!Number.isFinite(max)||max<=0))||(min!==null&&max!==null&&max<=min)||(price!==null&&(!Number.isFinite(price)||price<0))||(eta!==null&&(!Number.isFinite(eta)||eta<=0)))return res.status(400).json({error:'Enter a valid distance range, fee, and ETA'}); await pool.query('UPDATE delivery_zones SET name=COALESCE(?,name),min_km=COALESCE(?,min_km),radius_km=COALESCE(?,radius_km),fee=COALESCE(?,fee),eta_minutes=COALESCE(?,eta_minutes),active=COALESCE(?,active) WHERE id=?',[name,min,max,price,eta,active,req.params.id]);res.json({ok:true}) })
 app.post('/api/admin/products', auth, roles('admin'), async (req,res) => { const {slug,name,description,category,basePrice,minimumQuantity=1,pricingRules=defaultRules,active=true}=req.body; const [result]=await pool.query('INSERT INTO product_catalog (slug,name,description,category,base_price,minimum_quantity,pricing_rules,active) VALUES (?,?,?,?,?,?,?,?)',[slug,name,description,category,basePrice,minimumQuantity,JSON.stringify(pricingRules),active]); res.status(201).json({id:result.insertId}) })
 app.patch('/api/admin/products/:id', auth, roles('admin'), async (req,res) => { const {name,description,category,basePrice,minimumQuantity,pricingRules,active,sortOrder}=req.body; await pool.query('UPDATE product_catalog SET name=COALESCE(?,name),description=COALESCE(?,description),category=COALESCE(?,category),base_price=COALESCE(?,base_price),minimum_quantity=COALESCE(?,minimum_quantity),pricing_rules=COALESCE(?,pricing_rules),active=COALESCE(?,active),sort_order=COALESCE(?,sort_order) WHERE id=?',[name,description,category,basePrice,minimumQuantity,pricingRules?JSON.stringify(pricingRules):null,active,sortOrder,req.params.id]); res.json({ok:true}) })
 app.post('/api/quote', async (req,res) => { const [rows]=await pool.query('SELECT * FROM product_catalog WHERE id=? AND active=1',[req.body.productId]); if(!rows[0]) return res.status(404).json({error:'Product not found'}); const quote=calculateQuote(rows[0],req.body); const delivery=req.body.fulfillmentMethod==='delivery'?await deliveryEstimate(req.body):{source:'pickup',durationSeconds:0,distanceMeters:0,fee:0,trafficAware:false}; res.json({...quote,delivery,total:Number((quote.subtotal+delivery.fee).toFixed(2)),currency:'ETB'}) })
@@ -197,6 +206,7 @@ app.post('/api/orders', uploadLimit, upload.array('artwork',5), async (req,res) 
   let customerId=null; try { const data=jwt.verify((req.headers.authorization||'').replace('Bearer ',''),process.env.SESSION_SECRET); if(data.kind==='customer')customerId=data.id } catch {}
   const [products]=await pool.query('SELECT * FROM product_catalog WHERE id=? AND active=1',[req.body.productId]); const product=products[0]; if(!product){ files.forEach(file=>fs.unlink(file.path,()=>{})); return res.status(400).json({error:'Choose a valid product'}) }
   const quote=calculateQuote(product,details), delivery=fulfillment==='delivery'?await deliveryEstimate({address:req.body.deliveryAddress,zone:req.body.deliveryZone,urgent,lat:req.body.lat,lng:req.body.lng}):{source:'pickup',durationSeconds:0,distanceMeters:0,fee:0}, reports=[]
+  if(fulfillment==='delivery'&&!delivery.serviceable){ files.forEach(file=>fs.unlink(file.path,()=>{})); return res.status(400).json({error:'Pin a location within 15 km of Maxrez to calculate delivery'}) }
   for(const file of files)reports.push(await validateArtwork(file)); const publicId=publicOrderId(),track=trackingToken(),total=Number((quote.subtotal+delivery.fee).toFixed(2)), connection=await pool.getConnection()
   try { await connection.beginTransaction(); const [result]=await connection.query('INSERT INTO orders (public_id,tracking_token,customer_id,product_id,customer_name,customer_phone,customer_email,service,details,pricing_breakdown,artwork_validation,quantity,unit_price,total_amount,status,urgent,fulfillment_method,delivery_address,delivery_zone,destination_lat,destination_lng,delivery_distance_meters,delivery_duration_seconds,delivery_fee,promised_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,? ,"new",?,?,?,?,?,?,?,?,DATE_ADD(NOW(),INTERVAL ? MINUTE))',[publicId,track,customerId,product.id,name,phone,normalizeEmail(req.body.email)||null,product.name,JSON.stringify(details),JSON.stringify(quote),JSON.stringify(reports),quote.quantity,quote.unitPrice,total,urgent,fulfillment,req.body.deliveryAddress||null,req.body.deliveryZone||null,numberOrNull(req.body.lat),numberOrNull(req.body.lng),delivery.distanceMeters,delivery.durationSeconds,delivery.fee,Math.ceil((delivery.durationSeconds||0)/60)+(urgent?120:1440)]); for(let i=0;i<files.length;i++){const file=files[i];await connection.query('INSERT INTO order_files (order_id,kind,original_name,stored_name,mime_type,size_bytes,validation_report) VALUES (? ,"artwork",?,?,?,?,?)',[result.insertId,file.originalname,file.filename,file.mimetype,file.size,JSON.stringify(reports[i])])} await connection.query('INSERT INTO order_events (order_id,actor_id,status,note) VALUES (?,NULL,"new","Order submitted by customer")',[result.insertId]); await connection.commit(); res.status(201).json({id:publicId,trackingToken:track,status:'new',total,currency:'ETB',artworkValidation:reports,trackingUrl:`/track/${track}`}) } catch(error) { await connection.rollback(); files.forEach(file=>fs.unlink(file.path,()=>{})); console.error('Order creation failed:',error.message); res.status(500).json({error:'Unable to create order right now'}) } finally { connection.release() }
 })
