@@ -1,4 +1,5 @@
 import 'dotenv/config'
+import { packages, packageQuote } from '../src/packages.js'
 import express from 'express'
 import cors from 'cors'
 import helmet from 'helmet'
@@ -60,7 +61,7 @@ const defaultRules = {
   urgentMultiplier: 1.25
 }
 const productSeeds = [
-  ['business-cards','Business Cards','Cards & stationery',4.5,50],['brochures','Brochures & Flyers','Marketing print',8,25],['labels','Labels & Stickers','Labels',3.5,50],['books','Books & Catalogues','Publishing',65,10],['packaging','Boxes & Packaging','Packaging',35,25],['restaurant-print','Restaurant Print Pack','Industry bundles',28,25],['large-format','Banners & Large Format','Large format',180,1],['custom','Custom Print Project','Custom',1,1]
+  ['business-cards','Business Cards','Cards & stationery',4.5,50],['brochures','Brochures & Flyers','Marketing print',8,25],['labels','Labels & Stickers','Labels',3.5,50],['books','Books & Catalogues','Publishing',65,10],['packaging','Boxes & Packaging','Packaging',35,25],['restaurant-print','Restaurant Print Pack','Industry bundles',28,25],['large-format','Banners & Large Format','Large format',180,1],['custom','Custom Print Project','Custom',1,1],['ctp-plates','CTP Plates','Prepress',450,1],['film-output','Film Output','Prepress',300,1]
 ]
 const deliveryTierSeeds = [
   ['Up to 0.5 km', 0, 0.5, 0, 15],
@@ -105,6 +106,7 @@ async function ensureSchema() {
   const [count] = await pool.query('SELECT COUNT(*) count FROM product_catalog')
   if (!Number(count[0].count)) for (let i = 0; i < productSeeds.length; i++) { const [slug,name,category,base,min] = productSeeds[i]; await pool.query('INSERT INTO product_catalog (slug,name,description,category,base_price,minimum_quantity,pricing_rules,sort_order) VALUES (?,?,?,?,?,?,?,?)', [slug,name,`Configure ${name.toLowerCase()} and receive an instant estimate.`,category,base,min,JSON.stringify(defaultRules),i]) }
   for (const [name, sort] of [['Telebirr',0],['CBE Birr',1],['Awash Bank',2]]) { const [rows]=await pool.query('SELECT id FROM payment_methods WHERE LOWER(name)=LOWER(?) LIMIT 1',[name]); if(!rows[0]) await pool.query('INSERT INTO payment_methods (name,instructions,account_label,sort_order) VALUES (?, ?, ?, ?)',[name,'Send the payment receipt with your order number.','',sort]) }
+  for (const p of packages) { const [existing]=await pool.query('SELECT id FROM product_catalog WHERE slug=?',['package-'+p.slug]); if(!existing.length) await pool.query('INSERT INTO product_catalog (slug,name,description,category,base_price,minimum_quantity,pricing_rules,sort_order) VALUES (?,?,?,?,?,?,?,?)',['package-'+p.slug,p.title+' package',p.items.join(', '),'Industry bundles',0,1,JSON.stringify({...defaultRules,packageItems:p.packageItems}),50]); }
   const [tierCount] = await pool.query('SELECT COUNT(*) count FROM delivery_zones WHERE min_km IS NOT NULL')
   if (!Number(tierCount[0].count)) for (const [name,minKm,maxKm,fee,eta] of deliveryTierSeeds) await pool.query('INSERT INTO delivery_zones (name,min_km,radius_km,fee,eta_minutes,center_lat,center_lng) VALUES (?,?,?,?,?,?,?)',[name,minKm,maxKm,fee,eta,facilityCoordinates.lat,facilityCoordinates.lng])
 }
@@ -112,6 +114,7 @@ async function ensureSchema() {
 function parseJson(value, fallback = {}) { if (!value) return fallback; if (typeof value === 'object') return value; try { return JSON.parse(value) } catch { return fallback } }
 function calculateQuote(product, input = {}) {
   const rules = parseJson(product.pricing_rules, defaultRules)
+  if(rules.packageItems) return packageQuote(rules,input)
   const quantity = Math.max(Number(product.minimum_quantity || 1), Number(input.quantity || 1))
   const pick = (key, value) => (rules[key] || []).find(x => x.value === value)?.multiplier || 1
   const tier = [...(rules.quantityTiers || [])].sort((a,b) => b.min-a.min).find(x => quantity >= x.min)?.multiplier || 1
