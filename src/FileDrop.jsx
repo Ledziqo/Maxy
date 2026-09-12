@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { useSiteLanguage } from './StorefrontEnhancements.jsx'
 
 export function StoreWithDrop({ Store, ...props }) { return <Store {...props} /> }
 
@@ -21,6 +22,8 @@ function isSupported(file) {
 }
 
 export default function FileDrop({ api }) {
+  const am = useSiteLanguage() === 'am'
+  const copy = am ? { eyebrow:'ፋይሎችን በቀጥታ ይላኩ', title:'እዚህ ይጣሉ።', titleEm:'ቀሪውን እኛ እንወስዳለን።', intro:'ስዕሎችን፣ ፎቶዎችን፣ ሰነዶችን ወይም የማጣቀሻ ፋይሎችን በቀጥታ ለMaxrez ቡድን ይላኩ። Telegram ወይም WhatsApp አያስፈልግም።', limits:'እስከ 10 ፋይሎች · እያንዳንዱ 50 MB · በአጠቃላይ 300 MB · PDF፣ ምስሎች፣ ZIP፣ Office ፋይሎች እና ሌሎች', choose:'ለመምረጥ ይንኩ ወይም ፋይሎችን እዚህ ይጣሉ', private:'ፋይሎችዎ የግል ሆነው ወደ ሰራተኞቻችን ይደርሳሉ።', name:'ስምዎ', phone:'ስልክ ቁጥር', email:'ኢሜይል (አማራጭ)', note:'ምን እንድናደርግልዎ ይፈልጋሉ? (አማራጭ)', sent:'✓ ፋይሎችዎ ደርሰዋል። ቡድናችን በቅርቡ ያነጋግርዎታል።', send:'ፋይሎችን ለMaxrez ይላኩ' } : { eyebrow:'SEND FILES DIRECTLY', title:'Drop it here.', titleEm:'We’ll take it from there.', intro:'Send artwork, photos, documents, or reference files straight to the Maxrez team. No Telegram or WhatsApp needed.', limits:'Up to 10 files · 50 MB each · 300 MB total · PDF, images, ZIP, Office files, and more', choose:'Tap to choose or drop files here', private:'Your files stay private and go to our staff queue.', name:'Your name', phone:'Phone number', email:'Email (optional)', note:'What would you like us to do? (optional)', sent:'✓ Files received. Our team will contact you shortly.', send:'Send files to Maxrez' }
   const [files, setFiles] = useState([])
   const [form, setForm] = useState({ name: '', phone: '', email: '', note: '' })
   const [status, setStatus] = useState('idle')
@@ -64,28 +67,28 @@ export default function FileDrop({ api }) {
   const totalSize = files.reduce((sum, file) => sum + file.size, 0)
   return <section className="file-drop-section">
     <div className="file-drop-copy">
-      <div className="eyebrow">SEND FILES DIRECTLY</div>
-      <h2>Drop it here.<br/><em>We’ll take it from there.</em></h2>
-      <p>Send artwork, photos, documents, or reference files straight to the Maxrez team. No Telegram or WhatsApp needed.</p>
-      <span>Up to 10 files · 50 MB each · 300 MB total · PDF, images, ZIP, Office files, and more</span>
+      <div className="eyebrow">{copy.eyebrow}</div>
+      <h2>{copy.title}<br/><em>{copy.titleEm}</em></h2>
+      <p>{copy.intro}</p>
+      <span>{copy.limits}</span>
     </div>
     <form className="file-drop-card" onSubmit={submit}>
       <label className="file-drop-zone" onDragOver={event => event.preventDefault()} onDrop={event => { event.preventDefault(); addFiles(event.dataTransfer.files) }}>
         <span className="file-drop-icon">↥</span>
-        <strong>{files.length ? `${files.length} file${files.length === 1 ? '' : 's'} selected` : 'Tap to choose or drop files here'}</strong>
-        <small>{files.length ? `${formatBytes(totalSize)} of 300 MB selected` : 'Your files stay private and go to our staff queue.'}</small>
+        <strong>{files.length ? `${files.length} ${am ? 'ፋይል' : `file${files.length === 1 ? '' : 's'}`} ${am ? 'ተመርጧል' : 'selected'}` : copy.choose}</strong>
+        <small>{files.length ? `${formatBytes(totalSize)} ${am ? 'ከ 300 MB ተመርጧል' : 'of 300 MB selected'}` : copy.private}</small>
         <input type="file" multiple accept={ACCEPTED_EXTENSIONS} onChange={event => { addFiles(event.target.files); event.currentTarget.value = '' }}/>
       </label>
       {files.length > 0 && <div className="file-drop-list" aria-live="polite">{files.map(file => <div className="file-drop-file" key={fileKey(file)}><span title={file.name}>{file.name}</span><small>{formatBytes(file.size)}</small><button type="button" aria-label={`Remove ${file.name}`} onClick={() => removeFile(file)}>×</button></div>)}</div>}
       <div className="file-drop-fields">
-        <input required placeholder="Your name" value={form.name} onChange={event => update('name', event.target.value)}/>
-        <input placeholder="Phone number" value={form.phone} onChange={event => update('phone', event.target.value)}/>
-        <input type="email" placeholder="Email (optional)" value={form.email} onChange={event => update('email', event.target.value)}/>
-        <textarea placeholder="What would you like us to do? (optional)" rows="3" value={form.note} onChange={event => update('note', event.target.value)}/>
+        <input required placeholder={copy.name} value={form.name} onChange={event => update('name', event.target.value)}/>
+        <input placeholder={copy.phone} value={form.phone} onChange={event => update('phone', event.target.value)}/>
+        <input type="email" placeholder={copy.email} value={form.email} onChange={event => update('email', event.target.value)}/>
+        <textarea placeholder={copy.note} rows="3" value={form.note} onChange={event => update('note', event.target.value)}/>
       </div>
       {status === 'sending' && <div className="file-drop-progress" role="status"><div><span>Uploading your files…</span><b>{progress}%</b></div><i><em style={{ width: `${progress}%` }}/></i><small>Please keep this page open until the upload finishes.</small></div>}
       {error && <p className="error-text" role="alert">{error}</p>}
-      {status === 'sent' ? <div className="file-drop-success">✓ Files received. Our team will contact you shortly.</div> : <button className="primary full" disabled={status === 'sending'}>{status === 'sending' ? `Uploading ${progress}%…` : 'Send files to Maxrez'} →</button>}
+      {status === 'sent' ? <div className="file-drop-success">{copy.sent}</div> : <button className="primary full" disabled={status === 'sending'}>{status === 'sending' ? `${am ? 'በመጫን ላይ' : 'Uploading'} ${progress}%…` : copy.send} →</button>}
     </form>
   </section>
 }
