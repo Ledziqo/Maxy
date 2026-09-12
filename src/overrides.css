@@ -4,7 +4,7 @@
 .hero{background:#faeee5!important}
 .hero-art{background:transparent!important}
 .hero-art::after{display:none!important}
-.hero-art img{content:url('/images/hero-print-showcase.png')!important;width:100%!important;height:100%!important;max-width:none!important;object-fit:cover!important;object-position:center!important;transform:none!important;filter:none!important;mask-image:none!important;-webkit-mask-image:none!important}
+.hero-art img{content:var(--hero-art-url)!important;width:100%!important;height:100%!important;max-width:none!important;object-fit:cover!important;object-position:center!important;transform:none!important;filter:none!important;mask-image:none!important;-webkit-mask-image:none!important}
 .service-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
 .service-card{padding:14px}
 .service-image{height:auto;aspect-ratio:3/2;padding:8px;background:#eee8e2;display:grid;place-items:center}
@@ -109,11 +109,11 @@
    dashboard and map additions cannot affect the storefront hero. */
 .hero,.hero-art{background:#faeee5!important}
 .hero-art:after{display:none!important;background:none!important}
-.hero-art img{content:url('/images/hero-print-showcase-v2.png')!important;filter:drop-shadow(0 24px 24px rgba(70,35,30,.14));-webkit-mask-image:none!important;mask-image:none!important}
+.hero-art img{content:var(--hero-art-url)!important;filter:drop-shadow(0 24px 24px rgba(70,35,30,.14));-webkit-mask-image:none!important;mask-image:none!important}
 @media(min-width:701px){
   .hero{position:relative;background:linear-gradient(90deg,#f9eadc 0%,#fdf3da 17.2%,#f4b39c 53%,#cf4d3e 88.9%,#cf4d3e 100%)!important}
   .hero:before,.hero:after{content:"";position:absolute;top:0;bottom:0;z-index:0;pointer-events:none}
-  .hero:before{left:calc(17.3% - .2%);width:.2%;background:url('/images/hero-print-showcase-v2.png') left top/auto 100% no-repeat;filter:blur(12px);transform:scaleX(87);transform-origin:right center}
+  .hero:before{left:calc(17.3% - .2%);width:.2%;background:var(--hero-art-url) left top/auto 100% no-repeat;filter:blur(12px);transform:scaleX(87);transform-origin:right center}
   .hero:after{right:0;width:calc(11.2% + 70px);background:linear-gradient(180deg,#d9433a 0%,#d9433a 38%,#d65345 55%,#d8755c 70%,#dc9b79 85%,#e4bd98 100%)}
   .hero-copy{position:relative;z-index:2}
   .hero-art{position:absolute;inset:0;z-index:1;background:transparent!important}
@@ -135,7 +135,7 @@
   .trust-row svg{width:14px!important;height:14px!important;flex:0 0 auto!important}
   .hero-art{position:relative!important;inset:auto!important;z-index:1!important;order:2!important;width:calc(100% + 36px)!important;height:260px!important;margin:22px -18px 0!important;transform:none!important;overflow:hidden!important;background:#faeee5!important}
   .hero-art:after{display:none!important;background:none!important}
-  .hero-art img{content:url('/images/hero-print-showcase-v2.png')!important;position:absolute!important;left:0!important;right:0!important;top:0!important;bottom:0!important;width:100%!important;height:100%!important;max-width:none!important;object-fit:cover!important;object-position:center!important;transform:none!important;filter:none!important;mask-image:none!important;-webkit-mask-image:none!important}
+  .hero-art img{content:var(--hero-art-url)!important;position:absolute!important;left:0!important;right:0!important;top:0!important;bottom:0!important;width:100%!important;height:100%!important;max-width:none!important;object-fit:cover!important;object-position:center!important;transform:none!important;filter:none!important;mask-image:none!important;-webkit-mask-image:none!important}
 }
 @media(max-width:360px){
   .hero-ctas{grid-template-columns:1fr!important}

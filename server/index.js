@@ -1,6 +1,7 @@
 import 'dotenv/config'
 import { packages, packageQuote } from '../src/packages.js'
 import express from 'express'
+import compression from 'compression'
 import cors from 'cors'
 import helmet from 'helmet'
 import rateLimit from 'express-rate-limit'
@@ -14,6 +15,7 @@ import mysql from 'mysql2/promise'
 import { PDFDocument } from 'pdf-lib'
 
 const app = express()
+app.use(compression())
 const port = Number(process.env.PORT || 3001)
 const missingProductionConfig = ['DATABASE_URL','SESSION_SECRET'].filter(key => !process.env[key])
 if (process.env.NODE_ENV === 'production' && missingProductionConfig.length) throw new Error(`Missing production configuration: ${missingProductionConfig.join(', ')}`)
@@ -265,8 +267,8 @@ app.patch('/api/orders/:id/assign', auth, roles('admin'), async (req,res) => { a
 app.get('/api/files/:id', auth, roles('admin','worker'), async (req,res) => { const [rows]=await pool.query('SELECT * FROM order_files WHERE id=?',[req.params.id]);if(!rows[0])return res.sendStatus(404);res.download(path.join(uploadDir,rows[0].stored_name),rows[0].original_name) })
 
 app.use('/payment-qr',express.static(paymentQrDir,{index:false,maxAge:'1h'}))
-app.use('/images',express.static(path.resolve('images')))
-app.use('/assets',express.static(path.resolve('dist/assets')))
+app.use('/images',express.static(path.resolve('images'), { maxAge: '1d' }))
+app.use('/assets',express.static(path.resolve('dist/assets'), { maxAge: '1y', immutable: true }))
 app.use(express.static('dist'))
 app.use((_req,res)=>res.sendFile(path.resolve('dist/index.html')))
 app.use((error,_req,res,_next)=>{ console.error('API error:',error.message); if(res.headersSent)return; res.status(error.statusCode||500).json({error:'Request could not be completed'}) })
