@@ -4,7 +4,12 @@ export function productRules(slug,rules) {
   labels:{sizes:[['custom','Your dimensions above']],materials:['Adhesive paper','White vinyl','Clear vinyl']},
   packaging:{sizes:[['custom','Your box dimensions above']],materials:['Folding carton','Kraft board','Rigid board']},
   books:{sizes:[['A5','A5 · 148 × 210 mm'],['A4','A4 · 210 × 297 mm'],['custom','Custom trim size']],materials:['Standard text paper','Coated paper','Premium book paper']},
-  'large-format':{sizes:[['1x1','1 × 1 m'],['2x1','2 × 1 m'],['custom','Custom dimensions']],materials:['Banner material','Adhesive vinyl','Display material']}
+  'large-format':{sizes:[['1x1','1 × 1 m'],['2x1','2 × 1 m'],['custom','Custom dimensions']],materials:['Banner material','Adhesive vinyl','Display material']},
+  'packaging-labels':{sizes:[['custom','Your label dimensions above']],materials:['Adhesive paper','White vinyl','Clear vinyl']},
+  'cosmetic-cartons':{sizes:[['custom','Your carton dimensions above']],materials:['Folding carton','Kraft board','Premium coated board']},
+  pouches:{sizes:[['custom','Your pouch dimensions above']],materials:['Standard pouch stock','Kraft pouch stock','Premium pouch stock']},
+  'paper-bags':{sizes:[['custom','Your bag dimensions above']],materials:['White bag paper','Kraft bag paper','Premium coated paper']},
+  'hang-tags':{sizes:[['custom','Your tag dimensions above']],materials:['Standard card','Kraft card','Premium card']}
  }
  const spec=specs[slug];if(!spec)return rules
  const isGeneric=rules.sizes?.map(s=>s.value).join(',')==='A5,A4,A3'

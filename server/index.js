@@ -34,6 +34,7 @@ const maxDropTotal = 300 * 1024 * 1024
 const qrUpload = multer({ dest: paymentQrDir, limits: { fileSize: 5 * 1024 * 1024 }, fileFilter: (_req, file, cb) => cb(null, /^image\/(png|jpeg|webp)$/.test(file.mimetype)) })
 
 app.use(helmet({
+  contentSecurityPolicy: { directives: { frameSrc: ["'self'", 'https://www.google.com'] } },
   crossOriginResourcePolicy: false,
   referrerPolicy: { policy: 'strict-origin-when-cross-origin' }
 }))
@@ -122,6 +123,12 @@ async function ensureSchema() {
     const [catalog] = await pool.query('SELECT id,slug,pricing_rules FROM product_catalog')
     for(const product of catalog){const rules=parseJson(product.pricing_rules,defaultRules);if(JSON.stringify(rules.sizes)!==JSON.stringify(defaultRules.sizes)||JSON.stringify(rules.materials)!==JSON.stringify(defaultRules.materials))continue;const specific=productRules(product.slug,rules);if(specific!==rules)await pool.query('UPDATE product_catalog SET pricing_rules=? WHERE id=?',[JSON.stringify(specific),product.id])}
     await pool.query('INSERT INTO workflow_migrations (name) VALUES ("product-specifications-v1")')
+  }
+  const [packagingSpecMigration]=await pool.query('SELECT name FROM workflow_migrations WHERE name="packaging-specifications-v2"')
+  if(!packagingSpecMigration.length){
+    const [catalog] = await pool.query('SELECT id,slug,pricing_rules FROM product_catalog')
+    for(const product of catalog){const rules=parseJson(product.pricing_rules,defaultRules);if(JSON.stringify(rules.sizes)!==JSON.stringify(defaultRules.sizes)||JSON.stringify(rules.materials)!==JSON.stringify(defaultRules.materials))continue;const specific=productRules(product.slug,rules);if(specific!==rules)await pool.query('UPDATE product_catalog SET pricing_rules=? WHERE id=?',[JSON.stringify(specific),product.id])}
+    await pool.query('INSERT INTO workflow_migrations (name) VALUES ("packaging-specifications-v2")')
   }
   if (!Number(tierCount[0].count)) for (const [name,minKm,maxKm,fee,eta] of deliveryTierSeeds) await pool.query('INSERT INTO delivery_zones (name,min_km,radius_km,fee,eta_minutes,center_lat,center_lng) VALUES (?,?,?,?,?,?,?)',[name,minKm,maxKm,fee,eta,facilityCoordinates.lat,facilityCoordinates.lng])
 }
@@ -290,7 +297,7 @@ app.post('/api/orders/:id/payment-proof', uploadLimit, upload.single('paymentPro
   await event(order.id,null,'payment_submitted','Customer submitted payment proof'); res.status(201).json({ok:true,status:'submitted'})
 })
 app.get('/api/orders/:id/payment-proofs', auth, roles('admin','worker'), async (req,res) => { const [rows]=await pool.query('SELECT id,original_name,mime_type,size_bytes,created_at FROM order_files WHERE order_id=? AND kind="payment_proof" ORDER BY created_at DESC',[req.params.id]); res.json(rows.map(x=>({...x,url:`/api/files/${x.id}`}))) })
-app.patch('/api/orders/:id/payment', auth, roles('admin','worker'), async (req,res) => { const paymentStatus=String(req.body.paymentStatus||''); if(!paymentStatuses.includes(paymentStatus))return res.status(400).json({error:'Invalid payment status'}); const [result]=await pool.query('UPDATE orders SET payment_status=?,payment_method=COALESCE(?,payment_method),payment_note=?,payment_verified_by=CASE WHEN ?="verified" THEN ? ELSE NULL END,payment_verified_at=CASE WHEN ?="verified" THEN NOW() ELSE NULL END,status=CASE WHEN ?="verified" THEN "paid" ELSE status END WHERE id=?',[paymentStatus,req.body.paymentMethod||null,req.body.note||null,paymentStatus,req.user.id,paymentStatus,paymentStatus,req.params.id]); if(!result.affectedRows)return res.status(404).json({error:'Order not found'}); await event(req.params.id,req.user.id,`payment_${paymentStatus}`,req.body.note||`Payment ${paymentStatus} by Maxrez staff`); if(paymentStatus==='verified')await event(req.params.id,req.user.id,'paid','Payment verified by Maxrez staff'); res.json({ok:true,paymentStatus}) })
+app.patch('/api/orders/:id/payment', auth, roles('admin','worker'), async (req,res) => { const paymentStatus=String(req.body.paymentStatus||''); if(!paymentStatuses.includes(paymentStatus))return res.status(400).json({error:'Invalid payment status'}); const [result]=await pool.query('UPDATE orders SET payment_status=?,payment_method=COALESCE(?,payment_method),payment_note=?,payment_verified_by=CASE WHEN ?="verified" THEN ? ELSE NULL END,payment_verified_at=CASE WHEN ?="verified" THEN COALESCE(payment_verified_at,NOW()) ELSE NULL END,status=CASE WHEN ?="verified" AND status IN ("new","confirmed","awaiting_payment") THEN "paid" ELSE status END WHERE id=?',[paymentStatus,req.body.paymentMethod||null,req.body.note||null,paymentStatus,req.user.id,paymentStatus,paymentStatus,req.params.id]); if(!result.affectedRows)return res.status(404).json({error:'Order not found'}); await event(req.params.id,req.user.id,`payment_${paymentStatus}`,req.body.note||`Payment ${paymentStatus} by Maxrez staff`); if(paymentStatus==='verified')await event(req.params.id,req.user.id,'paid','Payment verified by Maxrez staff'); res.json({ok:true,paymentStatus}) })
 
 app.get('/api/payment-methods', async (_req,res) => { const [rows]=await pool.query('SELECT id,name,instructions,account_label,qr_url FROM payment_methods WHERE active=1 ORDER BY sort_order,id'); res.json(rows) })
 app.post('/api/payment-methods', auth, roles('admin'), async (req,res) => { const {name,instructions,accountLabel}=req.body; const [result]=await pool.query('INSERT INTO payment_methods (name,instructions,account_label) VALUES (?,?,?)',[name,instructions,accountLabel]); res.status(201).json({id:result.insertId}) })
