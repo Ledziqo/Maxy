@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react'
 
 import { Analytics, RulesEditor } from './AdminInsights.jsx'
+import {DailyQueue,WorkflowPanel} from './WorkflowAdmin.jsx'
+import {ContentEditor} from './Stories.jsx'
 import FileDropsPanel from './FileDropsPanel.jsx'
 
 const statuses = ['new', 'confirmed', 'paid', 'out_for_delivery', 'completed', 'cancelled']
@@ -39,7 +41,8 @@ function StaffLogin({ api, onSuccess, go }) {
 export default function OperationsWorkspace({ api, go }) {
   const [session, setSession] = useState(sessionData)
   const headers = session ? { Authorization: `Bearer ${session.token}` } : {}
-  const [tab, setTab] = useState('orders')
+  const [tab, setTab] = useState('today')
+  const [workflowRows,setWorkflowRows]=useState([])
   const [orders, setOrders] = useState([])
   const [products, setProducts] = useState([])
   const [zones, setZones] = useState([])
@@ -55,6 +58,8 @@ export default function OperationsWorkspace({ api, go }) {
   const load = async () => {
     if (!session) return
     setError('')
+    try { setWorkflowRows(await api('/admin/workflow',{headers})) } catch(e){setError(e.message)}
+    try { setFileDrops(await api('/admin/file-drops', { headers })) } catch(e){setError(e.message)}
     try { setOrders(await api('/orders', { headers })) } catch (e) { setError(e.message) }
     try { setProducts(await api('/admin/products', { headers })) } catch (e) { setError(e.message) }
     if (session.user.role === 'admin') {
@@ -85,16 +90,19 @@ export default function OperationsWorkspace({ api, go }) {
   const updateFileDrop = async (id, status) => { try { await api(`/admin/file-drops/${id}`, { method: 'PATCH', headers: { ...headers, 'Content-Type': 'application/json' }, body: JSON.stringify({ status }) }); show('File drop updated.'); load() } catch (e) { setError(e.message) } }
 
   if (!session) return <StaffLogin api={api} onSuccess={setSession} go={go} />
-  const tabs = session.user.role === 'admin' ? [['orders', 'Orders'], ['file-drops', 'File drops'], ['analytics', 'Analytics'], ['payments', 'Payments'], ['pricing', 'Pricing'], ['delivery', 'Delivery pricing'], ['people', 'Staff & admins'], ['payments-settings', 'Payment settings']] : [['orders', 'Orders'], ['file-drops', 'File drops'], ['payments', 'Payments']]
+  const tabs = session.user.role === 'admin' ? [['today','Today'],['quotes','Quote requests'],['proofs','Artwork proofs'],['content','Website content'],['orders', 'Orders'], ['file-drops', 'File drops'], ['analytics', 'Analytics'], ['payments', 'Payments'], ['pricing', 'Pricing'], ['delivery', 'Delivery pricing'], ['people', 'Staff & admins'], ['payments-settings', 'Payment settings']] : [['today','Today'],['proofs','Artwork proofs'],['orders', 'Orders'], ['file-drops', 'File drops'], ['payments', 'Payments']]
 
   return <main className="workspace workspace-v3">
     <header className="workspace-top"><button className="back" onClick={() => go('/')}>← Storefront</button><div className="workspace-brand"><img src="/images/maxrez-logo.png" alt="Maxrez"/></div><div className="workspace-user"><b>{session.user.name}</b><small>{session.user.role}</small><button className="back" onClick={() => { localStorage.removeItem('maxrez-session'); location.reload() }}>Sign out</button></div></header>
     <div className="workspace-layout"><aside className="workspace-nav">{tabs.map(([value, label]) => <button key={value} className={tab === value ? 'active' : ''} onClick={() => setTab(value)}>{label}{value === 'payments' && orders.filter(o => o.payment_status === 'submitted').length > 0 && <i>{orders.filter(o => o.payment_status === 'submitted').length}</i>}</button>)}</aside>
       <section className="dash"><div className="dash-head"><div><div className="eyebrow">{session.user.role.toUpperCase()} WORKSPACE</div><h1>{tabs.find(x => x[0] === tab)?.[1]}</h1></div><button className="filter" onClick={load}>↻ Refresh</button></div>{error && <div className="admin-alert error-text">{error}</div>}{notice && <div className="admin-alert success-text">{notice}</div>}
+        {tab==='today'&&<DailyQueue rows={workflowRows} drops={fileDrops} onTab={setTab} isAdmin={session.user.role==='admin'}/>}
+        {['quotes','proofs'].includes(tab)&&<WorkflowPanel rows={workflowRows} api={api} headers={headers} mode={tab} onRefresh={load} isAdmin={session.user.role==='admin'}/>}
+        {tab==='content'&&session.user.role==='admin'&&<ContentEditor api={api} headers={headers}/>}
         {tab === 'orders' && <><div className="admin-toolbar"><input placeholder="Search order, customer, service, or status" value={search} onChange={e => setSearch(e.target.value)} /><span>{filteredOrders.length} orders</span></div><div className="operations-orders">{filteredOrders.length ? filteredOrders.map(order => <OrderCard key={order.id} order={order} onStatus={value => updateOrder(order.id, { status: value }, 'Order status updated.')} onPayment={value => updatePayment(order.id, value)} openFile={openFile} />) : <div className="empty-state">No orders match your search.</div>}</div></>}
         {tab === 'file-drops' && <FileDropsPanel drops={fileDrops} api={api} headers={headers} onUpdate={updateFileDrop} />}
         {tab === 'payments' && <div className="operations-orders">{orders.filter(o => o.payment_status === 'submitted').map(order => <OrderCard key={order.id} order={order} paymentOnly onStatus={value => updateOrder(order.id, { status: value }, 'Order status updated.')} onPayment={value => updatePayment(order.id, value)} openFile={openFile} />)}{!orders.some(o => o.payment_status === 'submitted') && <div className="empty-state"><h2>Payment queue is clear</h2><p>Submitted payment screenshots will appear here.</p></div>}</div>}
-        {tab === 'analytics' && <Analytics orders={orders}/>}
+        {tab === 'analytics' && <Analytics orders={workflowRows}/>}
         {tab === 'pricing' && <PricingPanel products={products} setProducts={setProducts} newProduct={newProduct} setNewProduct={setNewProduct} createProduct={createProduct} saveProduct={saveProduct} canEdit={session.user.role === 'admin'} />}
         {tab === 'delivery' && <DeliveryZonesPanel zones={zones} setZones={setZones} saveZone={saveZone} createZone={createZone} />}
         {tab === 'people' && <div className="operations-list"><form className="operations-panel" onSubmit={createStaff}><div className="panel-heading"><div><h2>Create staff or admin</h2><small>Only administrators can create accounts.</small></div><button className="primary">Create account</button></div><div className="pricing-fields"><label>Name<input required value={newStaff.name} onChange={e => setNewStaff({ ...newStaff, name: e.target.value })} /></label><label>Email<input required type="email" value={newStaff.email} onChange={e => setNewStaff({ ...newStaff, email: e.target.value })} /></label><label>Temporary password<input required minLength="8" type="password" value={newStaff.password} onChange={e => setNewStaff({ ...newStaff, password: e.target.value })} /></label><label>Role<select value={newStaff.role} onChange={e => setNewStaff({ ...newStaff, role: e.target.value })}><option value="worker">Worker</option><option value="admin">Admin</option></select></label></div></form>{staff.map(member => <article className="operations-panel staff-row" key={member.id}><div><b>{member.name}</b><small>{member.email}</small></div><span>{member.role}</span><span className={member.active ? 'success-text' : 'error-text'}>{member.active ? 'Active' : 'Inactive'}</span></article>)}</div>}

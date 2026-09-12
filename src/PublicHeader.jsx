@@ -17,6 +17,7 @@ export default function PublicHeader({ go, menu, setMenu }) {
       <button onClick={() => open('/work')}>Our work</button>
       <button onClick={() => open('/visit')}>Visit us</button>
       <button onClick={() => open('/track')}>Track an order</button>
+      <button onClick={() => open('/account')}>My jobs</button>
       <button className="mobile-staff" onClick={() => open('/staff')}>Staff login</button>
     </nav>
     <div className="nav-actions">
