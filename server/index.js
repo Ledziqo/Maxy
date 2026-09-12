@@ -25,6 +25,7 @@ fs.mkdirSync(uploadDir, { recursive: true })
 fs.mkdirSync(paymentQrDir, { recursive: true })
 const pool = mysql.createPool({ uri: process.env.DATABASE_URL, waitForConnections: true, connectionLimit: 10 })
 const upload = multer({ dest: uploadDir, limits: { fileSize: 25 * 1024 * 1024 }, fileFilter: (_req, file, cb) => cb(null, /^(image|application\/pdf)/.test(file.mimetype)) })
+const dropUpload = multer({ dest: uploadDir, limits: { files: 10, fileSize: 25 * 1024 * 1024 }, fileFilter: (_req, file, cb) => cb(null, /^(image\/|application\/pdf|application\/zip|application\/vnd\.|text\/plain)/.test(file.mimetype) || file.mimetype === 'application/octet-stream') })
 const qrUpload = multer({ dest: paymentQrDir, limits: { fileSize: 5 * 1024 * 1024 }, fileFilter: (_req, file, cb) => cb(null, /^image\/(png|jpeg|webp)$/.test(file.mimetype)) })
 
 app.use(helmet({
@@ -37,6 +38,7 @@ app.use(express.json({ limit: '3mb' }))
 app.use(rateLimit({ windowMs: 15 * 60 * 1000, limit: 400 }))
 const authLimit = rateLimit({ windowMs: 15 * 60 * 1000, limit: 20, standardHeaders: true, legacyHeaders: false })
 const uploadLimit = rateLimit({ windowMs: 15 * 60 * 1000, limit: 40, standardHeaders: true, legacyHeaders: false })
+const dropLimit = rateLimit({ windowMs: 15 * 60 * 1000, limit: 12, standardHeaders: true, legacyHeaders: false })
 
 const publicOrderId = () => `MXZ-${Date.now().toString(36).toUpperCase()}-${crypto.randomBytes(2).toString('hex').toUpperCase()}`
 const trackingToken = () => crypto.randomBytes(30).toString('base64url')
@@ -201,6 +203,28 @@ app.patch('/api/admin/products/:id', auth, roles('admin'), async (req,res) => { 
 app.post('/api/quote', async (req,res) => { const [rows]=await pool.query('SELECT * FROM product_catalog WHERE id=? AND active=1',[req.body.productId]); if(!rows[0]) return res.status(404).json({error:'Product not found'}); const quote=calculateQuote(rows[0],req.body); const delivery=req.body.fulfillmentMethod==='delivery'?await deliveryEstimate(req.body):{source:'pickup',durationSeconds:0,distanceMeters:0,fee:0,trafficAware:false}; res.json({...quote,delivery,total:Number((quote.subtotal+delivery.fee).toFixed(2)),currency:'ETB'}) })
 app.post('/api/delivery-estimate', async (req,res) => res.json(await deliveryEstimate(req.body)))
 app.post('/api/artwork/validate', upload.array('artwork',5), async (req,res) => { const reports=[]; for(const file of req.files||[]){reports.push(await validateArtwork(file));fs.unlink(file.path,()=>{})} res.json({reports,status:reports.some(x=>x.status==='review')?'review':'ready'}) })
+
+app.post('/api/file-drops', dropLimit, dropUpload.array('files', 10), async (req, res) => {
+  const files = req.files || []
+  const name = String(req.body.name || '').trim()
+  const phone = String(req.body.phone || '').trim()
+  const email = normalizeEmail(req.body.email)
+  const note = String(req.body.note || '').trim().slice(0, 4000)
+  if (!name || (!phone && !email)) { files.forEach(file => fs.unlink(file.path, () => {})); return res.status(400).json({ error: 'Add your name and either a phone number or email.' }) }
+  if (!files.length) return res.status(400).json({ error: 'Attach at least one file.' })
+  try {
+    const [submission] = await pool.query('INSERT INTO file_drop_submissions (customer_name,customer_phone,customer_email,note) VALUES (?,?,?,?)', [name, phone || null, email || null, note || null])
+    for (const file of files) await pool.query('INSERT INTO file_drop_files (submission_id,original_name,stored_name,mime_type,size_bytes) VALUES (?,?,?,?,?)', [submission.insertId, file.originalname, file.filename, file.mimetype || 'application/octet-stream', file.size])
+    res.status(201).json({ ok: true, id: `DROP-${submission.insertId}` })
+  } catch (error) { files.forEach(file => fs.unlink(file.path, () => {})); console.error('File drop failed:', error.message); res.status(500).json({ error: 'Unable to receive files right now.' }) }
+})
+app.get('/api/admin/file-drops', auth, roles('admin','worker'), async (_req, res) => {
+  const [rows] = await pool.query('SELECT * FROM file_drop_submissions ORDER BY created_at DESC')
+  for (const row of rows) { const [files] = await pool.query('SELECT id,original_name,mime_type,size_bytes FROM file_drop_files WHERE submission_id=? ORDER BY id', [row.id]); row.files = files.map(file => ({ ...file, url: `/api/file-drops/${file.id}/download` })) }
+  res.json(rows)
+})
+app.patch('/api/admin/file-drops/:id', auth, roles('admin','worker'), async (req, res) => { const status = ['new','reviewed','archived'].includes(req.body.status) ? req.body.status : null; if (!status) return res.status(400).json({ error: 'Invalid file drop status.' }); await pool.query('UPDATE file_drop_submissions SET status=? WHERE id=?', [status, req.params.id]); res.json({ ok: true }) })
+app.get('/api/file-drops/:fileId/download', auth, roles('admin','worker'), async (req, res) => { const [rows] = await pool.query('SELECT * FROM file_drop_files WHERE id=?', [req.params.fileId]); if (!rows[0]) return res.sendStatus(404); res.download(path.join(uploadDir, rows[0].stored_name), rows[0].original_name) })
 
 app.post('/api/orders', uploadLimit, upload.array('artwork',5), async (req,res) => {
   const files=req.files||[], urgent=req.body.urgent==='true'||req.body.urgent===true, fulfillment=req.body.fulfillmentMethod==='delivery'?'delivery':'pickup', details=parseJson(req.body.details,req.body), name=String(req.body.name||'').trim(), phone=String(req.body.phone||'').trim()

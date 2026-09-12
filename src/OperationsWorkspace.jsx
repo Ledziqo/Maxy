@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react'
 
 import { Analytics, RulesEditor } from './AdminInsights.jsx'
+import FileDropsPanel from './FileDropsPanel.jsx'
 
 const statuses = ['new', 'confirmed', 'paid', 'out_for_delivery', 'completed', 'cancelled']
 
@@ -44,6 +45,7 @@ export default function OperationsWorkspace({ api, go }) {
   const [zones, setZones] = useState([])
   const [staff, setStaff] = useState([])
   const [methods, setMethods] = useState([])
+  const [fileDrops, setFileDrops] = useState([])
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const [search, setSearch] = useState('')
@@ -59,6 +61,7 @@ export default function OperationsWorkspace({ api, go }) {
       try { setZones(await api('/admin/delivery-zones', { headers })) } catch (e) { setError(e.message) }
       try { setStaff(await api('/admin/staff', { headers })) } catch (e) { setError(e.message) }
       try { setMethods(await api('/payment-methods')) } catch (e) { setError(e.message) }
+      try { setFileDrops(await api('/admin/file-drops', { headers })) } catch (e) { setError(e.message) }
     }
   }
   useEffect(() => { load() }, [session])
@@ -79,15 +82,17 @@ export default function OperationsWorkspace({ api, go }) {
   const createStaff = async event => { event.preventDefault(); try { await api('/admin/staff', { method: 'POST', headers: { ...headers, 'Content-Type': 'application/json' }, body: JSON.stringify(newStaff) }); setNewStaff({ name: '', email: '', password: '', role: 'worker' }); show('Account created.'); load() } catch (e) { setError(e.message) } }
   const saveMethod = async method => { try { await api(`/payment-methods/${method.id}`, { method: 'PATCH', headers: { ...headers, 'Content-Type': 'application/json' }, body: JSON.stringify({ accountLabel: method.account_label, instructions: method.instructions }) }); show(`${method.name} details saved.`); load() } catch (e) { setError(e.message) } }
   const uploadQr = async (id, file) => { const body = new FormData(); body.append('qr', file); try { await api(`/admin/payment-methods/${id}/qr`, { method: 'POST', headers, body }); show('Payment QR updated.'); load() } catch (e) { setError(e.message) } }
+  const updateFileDrop = async (id, status) => { try { await api(`/admin/file-drops/${id}`, { method: 'PATCH', headers: { ...headers, 'Content-Type': 'application/json' }, body: JSON.stringify({ status }) }); show('File drop updated.'); load() } catch (e) { setError(e.message) } }
 
   if (!session) return <StaffLogin api={api} onSuccess={setSession} go={go} />
-  const tabs = session.user.role === 'admin' ? [['orders', 'Orders'], ['analytics', 'Analytics'], ['payments', 'Payments'], ['pricing', 'Pricing'], ['delivery', 'Delivery pricing'], ['people', 'Staff & admins'], ['payments-settings', 'Payment settings']] : [['orders', 'Orders'], ['payments', 'Payments']]
+  const tabs = session.user.role === 'admin' ? [['orders', 'Orders'], ['file-drops', 'File drops'], ['analytics', 'Analytics'], ['payments', 'Payments'], ['pricing', 'Pricing'], ['delivery', 'Delivery pricing'], ['people', 'Staff & admins'], ['payments-settings', 'Payment settings']] : [['orders', 'Orders'], ['file-drops', 'File drops'], ['payments', 'Payments']]
 
   return <main className="workspace workspace-v3">
     <header className="workspace-top"><button className="back" onClick={() => go('/')}>← Storefront</button><div className="workspace-brand"><img src="/images/maxrez-logo.png" alt="Maxrez"/></div><div className="workspace-user"><b>{session.user.name}</b><small>{session.user.role}</small><button className="back" onClick={() => { localStorage.removeItem('maxrez-session'); location.reload() }}>Sign out</button></div></header>
     <div className="workspace-layout"><aside className="workspace-nav">{tabs.map(([value, label]) => <button key={value} className={tab === value ? 'active' : ''} onClick={() => setTab(value)}>{label}{value === 'payments' && orders.filter(o => o.payment_status === 'submitted').length > 0 && <i>{orders.filter(o => o.payment_status === 'submitted').length}</i>}</button>)}</aside>
       <section className="dash"><div className="dash-head"><div><div className="eyebrow">{session.user.role.toUpperCase()} WORKSPACE</div><h1>{tabs.find(x => x[0] === tab)?.[1]}</h1></div><button className="filter" onClick={load}>↻ Refresh</button></div>{error && <div className="admin-alert error-text">{error}</div>}{notice && <div className="admin-alert success-text">{notice}</div>}
         {tab === 'orders' && <><div className="admin-toolbar"><input placeholder="Search order, customer, service, or status" value={search} onChange={e => setSearch(e.target.value)} /><span>{filteredOrders.length} orders</span></div><div className="operations-orders">{filteredOrders.length ? filteredOrders.map(order => <OrderCard key={order.id} order={order} onStatus={value => updateOrder(order.id, { status: value }, 'Order status updated.')} onPayment={value => updatePayment(order.id, value)} openFile={openFile} />) : <div className="empty-state">No orders match your search.</div>}</div></>}
+        {tab === 'file-drops' && <FileDropsPanel drops={fileDrops} api={api} headers={headers} onUpdate={updateFileDrop} />}
         {tab === 'payments' && <div className="operations-orders">{orders.filter(o => o.payment_status === 'submitted').map(order => <OrderCard key={order.id} order={order} paymentOnly onStatus={value => updateOrder(order.id, { status: value }, 'Order status updated.')} onPayment={value => updatePayment(order.id, value)} openFile={openFile} />)}{!orders.some(o => o.payment_status === 'submitted') && <div className="empty-state"><h2>Payment queue is clear</h2><p>Submitted payment screenshots will appear here.</p></div>}</div>}
         {tab === 'analytics' && <Analytics orders={orders}/>}
         {tab === 'pricing' && <PricingPanel products={products} setProducts={setProducts} newProduct={newProduct} setNewProduct={setNewProduct} createProduct={createProduct} saveProduct={saveProduct} canEdit={session.user.role === 'admin'} />}

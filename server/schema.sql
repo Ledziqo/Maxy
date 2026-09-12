@@ -127,3 +127,25 @@ CREATE TABLE IF NOT EXISTS order_events (
   FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
   FOREIGN KEY (actor_id) REFERENCES users(id) ON DELETE SET NULL
 );
+
+CREATE TABLE IF NOT EXISTS file_drop_submissions (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  customer_name VARCHAR(160) NOT NULL,
+  customer_phone VARCHAR(40),
+  customer_email VARCHAR(190),
+  note TEXT,
+  status ENUM('new','reviewed','archived') NOT NULL DEFAULT 'new',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_file_drop_status_created (status, created_at)
+);
+
+CREATE TABLE IF NOT EXISTS file_drop_files (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  submission_id INT NOT NULL,
+  original_name VARCHAR(255) NOT NULL,
+  stored_name VARCHAR(255) NOT NULL,
+  mime_type VARCHAR(160) NOT NULL,
+  size_bytes INT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (submission_id) REFERENCES file_drop_submissions(id) ON DELETE CASCADE
+);

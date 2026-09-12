@@ -1,0 +1,58 @@
+/* Keep the original artwork sharp; extend its colours behind the edges. */
+.hero { overflow: hidden !important; }
+.hero-art {
+  isolation: isolate;
+  background: transparent !important;
+  overflow: visible !important;
+}
+.hero-art::before {
+  content: '';
+  display: block !important;
+  position: absolute;
+  inset: -58px;
+  z-index: -1;
+  pointer-events: none;
+  background: url('/images/hero-maxrez-studio-v6.png') center / 100% 100% no-repeat;
+  filter: blur(38px);
+  opacity: .65;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 18%, #000 82%, transparent), linear-gradient(180deg, transparent, #000 20%, #000 80%, transparent);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(90deg, transparent, #000 18%, #000 82%, transparent), linear-gradient(180deg, transparent, #000 20%, #000 80%, transparent);
+  mask-composite: intersect;
+}
+.hero-art img {
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 96%, transparent), linear-gradient(180deg, transparent, #000 9%, #000 97%, transparent) !important;
+  -webkit-mask-composite: source-in !important;
+  mask-image: linear-gradient(90deg, transparent, #000 8%, #000 96%, transparent), linear-gradient(180deg, transparent, #000 9%, #000 97%, transparent) !important;
+  mask-composite: intersect !important;
+}
+@media (max-width: 1050px) {
+  .hero {
+    background: linear-gradient(180deg, #fbf0e7 0%, #f8e3d6 48%, #edb49e 100%) !important;
+  }
+  .hero-art::before { inset: -32px; filter: blur(28px); opacity: .55; }
+  .hero-art img {
+    height: auto !important;
+    object-fit: contain !important;
+  }
+}
+@media (max-width: 700px) {
+  .hero {
+    padding: 30px 20px 16px !important;
+    gap: 20px !important;
+    background: linear-gradient(180deg, #fbf0e7 0%, #f8e6da 62%, #edb49e 100%) !important;
+  }
+  .hero h1 { font-size: clamp(34px, 10vw, 46px) !important; line-height: 1.06 !important; }
+  .hero .lede { font-size: 14px !important; line-height: 1.7 !important; }
+  .hero-art {
+    width: calc(100% + 40px) !important;
+    margin: 8px -20px 0 !important;
+    height: auto !important;
+    aspect-ratio: 1672 / 941 !important;
+  }
+  .hero-art img { width: 100% !important; height: auto !important; }
+  .trust-row { padding-top: 12px !important; }
+  .trust-row span { white-space: normal !important; text-align: center; }
+  .hero-secondary-actions { gap: 6px 16px; }
+  .hero-secondary-actions .hero-scroll { margin: 0 !important; }
+}
