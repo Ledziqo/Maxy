@@ -36,6 +36,22 @@ const policyCopy = {
 }
 
 async function api(path, options={}) {
+  if (options.onUploadProgress) return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest()
+    xhr.open(options.method || 'GET', `${API}${path}`)
+    Object.entries(options.headers || {}).forEach(([key, value]) => xhr.setRequestHeader(key, value))
+    xhr.upload.onprogress = event => { if (event.lengthComputable) options.onUploadProgress(Math.round(event.loaded / event.total * 100)) }
+    xhr.onload = () => {
+      let data
+      try { data = JSON.parse(xhr.responseText) } catch { return reject(new Error('The service is temporarily unavailable. Please try again or contact MaxRez.')) }
+      if (xhr.status < 200 || xhr.status >= 300) return reject(new Error(data.error || 'Request failed. Please try again.'))
+      resolve(data)
+    }
+    xhr.onerror = () => reject(new Error('The upload connection failed. Please try again.'))
+    xhr.ontimeout = () => reject(new Error('The upload timed out. Please try again.'))
+    xhr.timeout = 10 * 60 * 1000
+    xhr.send(options.body)
+  })
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), 20000)
   try {

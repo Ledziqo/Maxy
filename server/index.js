@@ -28,6 +28,7 @@ fs.mkdirSync(paymentQrDir, { recursive: true })
 const pool = mysql.createPool({ uri: process.env.DATABASE_URL, waitForConnections: true, connectionLimit: 10 })
 const upload = multer({ dest: uploadDir, limits: { fileSize: 50 * 1024 * 1024 }, fileFilter: (_req, file, cb) => cb(null, /^(image|application\/pdf)/.test(file.mimetype)) })
 const dropUpload = multer({ dest: uploadDir, limits: { files: 10, fileSize: 50 * 1024 * 1024 }, fileFilter: (_req, file, cb) => cb(null, /^(image\/|application\/pdf|application\/zip|application\/vnd\.|text\/plain)/.test(file.mimetype) || file.mimetype === 'application/octet-stream') })
+const maxDropTotal = 300 * 1024 * 1024
 const qrUpload = multer({ dest: paymentQrDir, limits: { fileSize: 5 * 1024 * 1024 }, fileFilter: (_req, file, cb) => cb(null, /^image\/(png|jpeg|webp)$/.test(file.mimetype)) })
 
 app.use(helmet({
@@ -212,6 +213,8 @@ app.post('/api/file-drops', dropLimit, dropUpload.array('files', 10), async (req
   const phone = String(req.body.phone || '').trim()
   const email = normalizeEmail(req.body.email)
   const note = String(req.body.note || '').trim().slice(0, 4000)
+  const totalBytes = files.reduce((sum, file) => sum + file.size, 0)
+  if (totalBytes > maxDropTotal) { files.forEach(file => fs.unlink(file.path, () => {})); return res.status(413).json({ error: 'The selected files must be 300 MB or less in total.' }) }
   if (!name || (!phone && !email)) { files.forEach(file => fs.unlink(file.path, () => {})); return res.status(400).json({ error: 'Add your name and either a phone number or email.' }) }
   if (!files.length) return res.status(400).json({ error: 'Attach at least one file.' })
   try {
@@ -271,6 +274,6 @@ app.use('/images',express.static(path.resolve('images'), { maxAge: '1d' }))
 app.use('/assets',express.static(path.resolve('dist/assets'), { maxAge: '1y', immutable: true }))
 app.use(express.static('dist'))
 app.use((_req,res)=>res.sendFile(path.resolve('dist/index.html')))
-app.use((error,_req,res,_next)=>{ console.error('API error:',error.message); if(res.headersSent)return; res.status(error.statusCode||500).json({error:'Request could not be completed'}) })
+app.use((error,_req,res,_next)=>{ console.error('API error:',error.message); if(res.headersSent)return; if(error instanceof multer.MulterError){const message=error.code==='LIMIT_FILE_SIZE'?'Each file must be 50 MB or smaller.':error.code==='LIMIT_FILE_COUNT'?'Choose up to 10 files.':'The upload could not be completed.';return res.status(413).json({error:message})} res.status(error.statusCode||500).json({error:'Request could not be completed'}) })
 
 ensureSchema().then(()=>app.listen(port,()=>console.log(`Maxrez API listening on ${port}`))).catch(error=>{console.error('Database setup failed:',error.message); if(process.env.NODE_ENV==='production')process.exit(1); app.listen(port,()=>console.log(`Maxrez API listening on ${port} (database pending)`))})
