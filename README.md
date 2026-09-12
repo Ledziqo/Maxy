@@ -7,7 +7,7 @@ npm install
 npm run dev
 ```
 
-The current build includes the storefront, service catalog, pricing configurator, order requests, artwork screening, private tracking links, payment-proof review, delivery estimates, and an Admin/Worker operations workspace. Real production use still requires secure environment variables, a persistent upload strategy, database backups, and notification-provider configuration.
+The current build includes the storefront, expanded product catalog, industry packages, multi-item project quotes, design briefs, sample-pack requests, artwork screening, private tracking links, payment-proof review, delivery estimates, in-site customer notifications, and an Admin/Worker operations workspace. Real production use still requires secure environment variables, a persistent upload strategy, and database backups.
 
 ## Backend setup
 
@@ -17,7 +17,7 @@ The current build includes the storefront, service catalog, pricing configurator
 4. Visit `/setup` once and enter the value of `SETUP_KEY`. Setup creates the administrator using the environment credentials, then refuses to run again after the first user exists.
 5. Run `npm run build` and start the Node app with `npm run server`.
 
-The API supports admin/worker login, customer orders, artwork uploads, payment-proof uploads, payment-method management, worker assignment, simplified order statuses, and payment verification events. The `private-uploads` directory must not be exposed as a public static folder. Payment QR images belong in the separate `public-payment-qr` directory.
+The API supports admin/worker login, customer orders, project quote baskets, artwork uploads, payment-proof uploads, design briefs, sample-pack requests, customer notifications, payment-method management, worker assignment, simplified order statuses, and payment verification events. The `private-uploads` directory must not be exposed as a public static folder. Payment QR images belong in the separate `public-payment-qr` directory. Design briefs and sample requests appear in the admin File drops queue so no paid notification provider is required.
 
 ## Build for Hostinger
 
