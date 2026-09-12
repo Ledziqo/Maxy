@@ -26,8 +26,8 @@ const facilityCoordinates = { lat: 9.0320, lng: 38.7469 }
 fs.mkdirSync(uploadDir, { recursive: true })
 fs.mkdirSync(paymentQrDir, { recursive: true })
 const pool = mysql.createPool({ uri: process.env.DATABASE_URL, waitForConnections: true, connectionLimit: 10 })
-const upload = multer({ dest: uploadDir, limits: { fileSize: 25 * 1024 * 1024 }, fileFilter: (_req, file, cb) => cb(null, /^(image|application\/pdf)/.test(file.mimetype)) })
-const dropUpload = multer({ dest: uploadDir, limits: { files: 10, fileSize: 25 * 1024 * 1024 }, fileFilter: (_req, file, cb) => cb(null, /^(image\/|application\/pdf|application\/zip|application\/vnd\.|text\/plain)/.test(file.mimetype) || file.mimetype === 'application/octet-stream') })
+const upload = multer({ dest: uploadDir, limits: { fileSize: 50 * 1024 * 1024 }, fileFilter: (_req, file, cb) => cb(null, /^(image|application\/pdf)/.test(file.mimetype)) })
+const dropUpload = multer({ dest: uploadDir, limits: { files: 10, fileSize: 50 * 1024 * 1024 }, fileFilter: (_req, file, cb) => cb(null, /^(image\/|application\/pdf|application\/zip|application\/vnd\.|text\/plain)/.test(file.mimetype) || file.mimetype === 'application/octet-stream') })
 const qrUpload = multer({ dest: paymentQrDir, limits: { fileSize: 5 * 1024 * 1024 }, fileFilter: (_req, file, cb) => cb(null, /^image\/(png|jpeg|webp)$/.test(file.mimetype)) })
 
 app.use(helmet({
