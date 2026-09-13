@@ -24,7 +24,7 @@
     "jsonwebtoken": "latest",
     "leaflet": "^1.9.4",
     "lucide-react": "latest",
-    "multer": "latest",
+    "multer": "^2.3.0",
     "mysql2": "latest",
     "pdf-lib": "^1.17.1",
     "react": "latest",
